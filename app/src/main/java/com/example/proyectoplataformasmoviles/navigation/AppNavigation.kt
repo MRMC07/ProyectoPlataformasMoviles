@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.proyectoplataformasmoviles.screens.ContactarScreen
 import com.example.proyectoplataformasmoviles.screens.DetalleScreen
 import com.example.proyectoplataformasmoviles.screens.InicioScreen
+import com.example.proyectoplataformasmoviles.screens.PublicarScreen
 
 @Composable
 fun AppNavigation() {
@@ -23,10 +24,12 @@ fun AppNavigation() {
             InicioScreen(
                 onPublicacionClick = {
                     navController.navigate("detalle")
+                },
+                onPublicarClick = {
+                    navController.navigate("publicar")
                 }
             )
         }
-
         composable("detalle") {
 
             DetalleScreen(
@@ -35,6 +38,18 @@ fun AppNavigation() {
                 },
                 onContactarClick = {
                     navController.navigate("contactar")
+                }
+            )
+        }
+
+        composable("publicar") {
+
+            PublicarScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onPublicarClick = {
+                    navController.popBackStack()
                 }
             )
         }
