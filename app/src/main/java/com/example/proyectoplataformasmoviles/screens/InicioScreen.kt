@@ -52,7 +52,8 @@ data class Publicacion(
 
 @Composable
 fun InicioScreen(
-    onPublicacionClick: () -> Unit
+    onPublicacionClick: () -> Unit,
+    onPublicarClick: () -> Unit
 ) {
 
     var busqueda by remember { mutableStateOf("") }
@@ -106,7 +107,7 @@ fun InicioScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { },
+                onClick = onPublicarClick,
                 containerColor = Color(0xFF17345F),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp)
