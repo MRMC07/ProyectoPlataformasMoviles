@@ -42,72 +42,79 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 
-data class Publicacion(
-    val nombre: String,
-    val precio: String,
-    val categoria: String,
-    val vendedor: String,
-    val imagenUrl: String
+data class SampleListing(
+    val title: String,
+    val priceLabel: String,
+    val category: String,
+    val sellerLabel: String,
+    val imageUrl: String
 )
 
 @Composable
-fun InicioScreen(
-    onPublicacionClick: () -> Unit,
-    onPublicarClick: () -> Unit
+fun LegacyHomeScreen(
+    onListingClick: () -> Unit,
+    onPublishClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("Todos") }
 
-    var busqueda by remember { mutableStateOf("") }
-    var categoriaSeleccionada by remember { mutableStateOf("Todos") }
-
-    val publicaciones = listOf(
-        Publicacion(
-            nombre = "Tutorías de Matemática",
-            precio = "Q75 / hora",
-            categoria = "Tutorías",
-            vendedor = "Vendedor verificado",
-            imagenUrl = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&q=80"
+    val listings = listOf(
+        SampleListing(
+            title = "Tutorías de Matemática",
+            priceLabel = "Q75 / hora",
+            category = "Tutorías",
+            sellerLabel = "Vendedor verificado",
+            imageUrl = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&q=80"
         ),
-        Publicacion(
-            nombre = "Brownies caseros",
-            precio = "Q25",
-            categoria = "Comida",
-            vendedor = "Vendedor verificado",
-            imagenUrl = "https://images.unsplash.com/photo-1607920591413-4ec007e70023?auto=format&fit=crop&w=600&q=80"
+        SampleListing(
+            title = "Brownies caseros",
+            priceLabel = "Q25",
+            category = "Comida",
+            sellerLabel = "Vendedor verificado",
+            imageUrl = "https://images.unsplash.com/photo-1607920591413-4ec007e70023?auto=format&fit=crop&w=600&q=80"
         ),
-        Publicacion(
-            nombre = "Soporte técnico para computadoras",
-            precio = "Q100",
-            categoria = "Tecnología",
-            vendedor = "Vendedor verificado",
-            imagenUrl = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80"
+        SampleListing(
+            title = "Soporte técnico para computadoras",
+            priceLabel = "Q100",
+            category = "Tecnología",
+            sellerLabel = "Vendedor verificado",
+            imageUrl = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80"
         ),
-        Publicacion(
-            nombre = "Diseño gráfico para redes sociales",
-            precio = "Q150",
-            categoria = "Diseño",
-            vendedor = "Vendedor verificado",
-            imagenUrl = "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
+        SampleListing(
+            title = "Diseño gráfico para redes sociales",
+            priceLabel = "Q150",
+            category = "Diseño",
+            sellerLabel = "Vendedor verificado",
+            imageUrl = "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=600&q=80"
         )
     )
 
-    val publicacionesFiltradas = publicaciones.filter { publicacion ->
-
-        val coincideBusqueda = publicacion.nombre.contains(
-            busqueda,
+    val filteredListings = listings.filter { listing ->
+        val matchesSearch = listing.title.contains(
+            searchQuery,
             ignoreCase = true
         )
 
-        val coincideCategoria =
-            categoriaSeleccionada == "Todos" ||
-                    publicacion.categoria == categoriaSeleccionada
+        val matchesCategory = selectedCategory == "Todos" ||
+                listing.category == selectedCategory
 
-        coincideBusqueda && coincideCategoria
+        matchesSearch && matchesCategory
     }
 
+    val categories = listOf(
+        "Todos" to "★",
+        "Tutorías" to "📚",
+        "Comida" to "🍰",
+        "Tecnología" to "💻",
+        "Diseño" to "🎨"
+    )
+
     Scaffold(
+        modifier = modifier,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onPublicarClick,
+                onClick = onPublishClick,
                 containerColor = Color(0xFF17345F),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp)
@@ -119,10 +126,9 @@ fun InicioScreen(
             }
         },
         bottomBar = {
-            BarraInferior()
+            LegacyBottomBar()
         }
     ) { innerPadding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -130,7 +136,6 @@ fun InicioScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 12.dp)
         ) {
-
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -138,7 +143,6 @@ fun InicioScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Text(
                     text = "Inicio",
                     fontSize = 22.sp,
@@ -162,9 +166,9 @@ fun InicioScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
-                value = busqueda,
-                onValueChange = {
-                    busqueda = it
+                value = searchQuery,
+                onValueChange = { value ->
+                    searchQuery = value
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -196,51 +200,16 @@ fun InicioScreen(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-
-                CategoriaItem(
-                    nombre = "Todos",
-                    simbolo = "★",
-                    seleccionada = categoriaSeleccionada == "Todos",
-                    onClick = {
-                        categoriaSeleccionada = "Todos"
-                    }
-                )
-
-                CategoriaItem(
-                    nombre = "Tutorías",
-                    simbolo = "📚",
-                    seleccionada = categoriaSeleccionada == "Tutorías",
-                    onClick = {
-                        categoriaSeleccionada = "Tutorías"
-                    }
-                )
-
-                CategoriaItem(
-                    nombre = "Comida",
-                    simbolo = "🍰",
-                    seleccionada = categoriaSeleccionada == "Comida",
-                    onClick = {
-                        categoriaSeleccionada = "Comida"
-                    }
-                )
-
-                CategoriaItem(
-                    nombre = "Tecnología",
-                    simbolo = "💻",
-                    seleccionada = categoriaSeleccionada == "Tecnología",
-                    onClick = {
-                        categoriaSeleccionada = "Tecnología"
-                    }
-                )
-
-                CategoriaItem(
-                    nombre = "Diseño",
-                    simbolo = "🎨",
-                    seleccionada = categoriaSeleccionada == "Diseño",
-                    onClick = {
-                        categoriaSeleccionada = "Diseño"
-                    }
-                )
+                categories.forEach { (categoryName, symbol) ->
+                    LegacyCategoryItem(
+                        name = categoryName,
+                        symbol = symbol,
+                        isSelected = selectedCategory == categoryName,
+                        onClick = {
+                            selectedCategory = categoryName
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -250,7 +219,6 @@ fun InicioScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Text(
                     text = "Recomendados para ti",
                     fontSize = 18.sp,
@@ -273,12 +241,13 @@ fun InicioScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-
-                items(publicacionesFiltradas) { publicacion ->
-
-                    PublicacionCard(
-                        publicacion = publicacion,
-                        onClick = onPublicacionClick
+                items(
+                    items = filteredListings,
+                    key = { listing -> listing.title }
+                ) { listing ->
+                    SampleListingCard(
+                        listing = listing,
+                        onClick = onListingClick
                     )
                 }
             }
@@ -287,40 +256,37 @@ fun InicioScreen(
 }
 
 @Composable
-fun CategoriaItem(
-    nombre: String,
-    simbolo: String,
-    seleccionada: Boolean,
-    onClick: () -> Unit
+private fun LegacyCategoryItem(
+    name: String,
+    symbol: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Button(
             onClick = onClick,
             modifier = Modifier.size(48.dp),
             shape = CircleShape,
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor =
-                    if (seleccionada) {
-                        Color(0xFF17345F)
-                    } else {
-                        Color(0xFFE4EBF3)
-                    },
-                contentColor =
-                    if (seleccionada) {
-                        Color.White
-                    } else {
-                        Color(0xFF25364A)
-                    }
+                containerColor = if (isSelected) {
+                    Color(0xFF17345F)
+                } else {
+                    Color(0xFFE4EBF3)
+                },
+                contentColor = if (isSelected) {
+                    Color.White
+                } else {
+                    Color(0xFF25364A)
+                }
             )
         ) {
-
             Text(
-                text = simbolo,
+                text = symbol,
                 fontSize = 19.sp
             )
         }
@@ -328,21 +294,21 @@ fun CategoriaItem(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = nombre,
+            text = name,
             fontSize = 10.sp
         )
     }
 }
 
 @Composable
-fun PublicacionCard(
-    publicacion: Publicacion,
-    onClick: () -> Unit
+private fun SampleListingCard(
+    listing: SampleListing,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -351,18 +317,15 @@ fun PublicacionCard(
             defaultElevation = 2.dp
         )
     ) {
-
         Column {
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(135.dp)
             ) {
-
                 AsyncImage(
-                    model = publicacion.imagenUrl,
-                    contentDescription = publicacion.nombre,
+                    model = listing.imageUrl,
+                    contentDescription = listing.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -372,13 +335,10 @@ fun PublicacionCard(
                         .padding(8.dp)
                         .size(30.dp)
                         .clip(CircleShape)
-                        .background(
-                            Color.White.copy(alpha = 0.92f)
-                        )
+                        .background(Color.White.copy(alpha = 0.92f))
                         .align(Alignment.TopEnd),
                     contentAlignment = Alignment.Center
                 ) {
-
                     Text(
                         text = "♡",
                         fontSize = 21.sp
@@ -389,9 +349,8 @@ fun PublicacionCard(
             Column(
                 modifier = Modifier.padding(8.dp)
             ) {
-
                 Text(
-                    text = publicacion.nombre,
+                    text = listing.title,
                     fontSize = 13.sp,
                     maxLines = 2,
                     fontWeight = FontWeight.Medium
@@ -400,7 +359,7 @@ fun PublicacionCard(
                 Spacer(modifier = Modifier.height(5.dp))
 
                 Text(
-                    text = publicacion.precio,
+                    text = listing.priceLabel,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -408,7 +367,7 @@ fun PublicacionCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "✓ ${publicacion.vendedor}",
+                    text = "✓ ${listing.sellerLabel}",
                     fontSize = 10.sp,
                     color = Color(0xFF238B57)
                 )
@@ -418,57 +377,57 @@ fun PublicacionCard(
 }
 
 @Composable
-fun BarraInferior() {
-
+private fun LegacyBottomBar(
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(65.dp)
             .background(Color.White),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        BarraItem(
-            simbolo = "⌂",
-            texto = "Inicio"
+        LegacyBottomBarItem(
+            symbol = "⌂",
+            label = "Inicio"
         )
 
-        BarraItem(
-            simbolo = "⌕",
-            texto = "Búsqueda"
+        LegacyBottomBarItem(
+            symbol = "⌕",
+            label = "Búsqueda"
         )
 
-        BarraItem(
-            simbolo = "▣",
-            texto = "Mis Productos"
+        LegacyBottomBarItem(
+            symbol = "▣",
+            label = "Mis Productos"
         )
 
-        BarraItem(
-            simbolo = "●",
-            texto = "Perfil"
+        LegacyBottomBarItem(
+            symbol = "●",
+            label = "Perfil"
         )
     }
 }
 
 @Composable
-fun BarraItem(
-    simbolo: String,
-    texto: String
+private fun LegacyBottomBarItem(
+    symbol: String,
+    label: String,
+    modifier: Modifier = Modifier
 ) {
-
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Text(
-            text = simbolo,
+            text = symbol,
             fontSize = 18.sp,
             color = Color(0xFF17345F)
         )
 
         Text(
-            text = texto,
+            text = label,
             fontSize = 9.sp
         )
     }

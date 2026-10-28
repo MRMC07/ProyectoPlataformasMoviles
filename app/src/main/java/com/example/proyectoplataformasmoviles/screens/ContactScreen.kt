@@ -30,47 +30,51 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class MensajeChat(
-    val texto: String,
-    val hora: String,
-    val esMio: Boolean
+data class ChatMessage(
+    val text: String,
+    val timestamp: String,
+    val isMine: Boolean
 )
 
 @Composable
-fun ContactarScreen() {
+fun ContactScreen(
+    modifier: Modifier = Modifier
+) {
+    var draftMessage by remember { mutableStateOf("") }
 
-    var mensajeEscrito by remember { mutableStateOf("") }
-
-    val mensajes = remember {
+    val messages = remember {
         mutableStateListOf(
-            MensajeChat(
-                texto = "¡Hola! ¿En qué puedo ayudarte? La tutoría puede ser virtual o presencial.",
-                hora = "10:42 AM",
-                esMio = false
+            ChatMessage(
+                text = "¡Hola! ¿En qué puedo ayudarte? " +
+                        "La tutoría puede ser virtual o presencial.",
+                timestamp = "10:42 AM",
+                isMine = false
             ),
-            MensajeChat(
-                texto = "Hola, me interesa la tutoría. ¿En qué zona te encuentras para ver si podemos hacerla presencial?",
-                hora = "10:45 AM",
-                esMio = true
+            ChatMessage(
+                text = "Hola, me interesa la tutoría. " +
+                        "¿En qué zona te encuentras para ver si podemos " +
+                        "hacerla presencial?",
+                timestamp = "10:45 AM",
+                isMine = true
             ),
-            MensajeChat(
-                texto = "Estoy por la zona centro. También podemos hacer la tutoría en línea si te queda mejor.",
-                hora = "10:48 AM",
-                esMio = false
+            ChatMessage(
+                text = "Estoy por la zona centro. También podemos hacer " +
+                        "la tutoría en línea si te queda mejor.",
+                timestamp = "10:48 AM",
+                isMine = false
             )
         )
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF5F8FC))
     ) {
-
-        // Encabezado
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -81,15 +85,12 @@ fun ContactarScreen() {
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Text(
                 text = "←",
                 fontSize = 26.sp
             )
 
-            Spacer(
-                modifier = Modifier.width(10.dp)
-            )
+            Spacer(modifier = Modifier.width(10.dp))
 
             Box(
                 modifier = Modifier
@@ -104,27 +105,21 @@ fun ContactarScreen() {
                 )
             }
 
-            Spacer(
-                modifier = Modifier.width(10.dp)
-            )
+            Spacer(modifier = Modifier.width(10.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Text(
                         text = "María",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(
-                        modifier = Modifier.width(4.dp)
-                    )
+                    Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
                         text = "✓",
@@ -148,7 +143,6 @@ fun ContactarScreen() {
             )
         }
 
-        // Servicio relacionado
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -156,7 +150,6 @@ fun ContactarScreen() {
                 .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -170,14 +163,11 @@ fun ContactarScreen() {
                 )
             }
 
-            Spacer(
-                modifier = Modifier.width(10.dp)
-            )
+            Spacer(modifier = Modifier.width(10.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-
                 Text(
                     text = "Tutorías de Matemática",
                     fontSize = 13.sp,
@@ -199,11 +189,8 @@ fun ContactarScreen() {
             )
         }
 
-        Spacer(
-            modifier = Modifier.height(1.dp)
-        )
+        Spacer(modifier = Modifier.height(1.dp))
 
-        // Aviso de seguridad
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -218,16 +205,13 @@ fun ContactarScreen() {
                 .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Text(
                 text = "♢",
                 fontSize = 20.sp,
                 color = Color(0xFF126B43)
             )
 
-            Spacer(
-                modifier = Modifier.width(8.dp)
-            )
+            Spacer(modifier = Modifier.width(8.dp))
 
             Text(
                 text = "Recuerda: acuerda los detalles de la tutoría " +
@@ -237,38 +221,28 @@ fun ContactarScreen() {
             )
         }
 
-        // Conversación
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(
-                    horizontal = 10.dp
-                ),
+                .padding(horizontal = 10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-
             item {
-                Spacer(
-                    modifier = Modifier.height(4.dp)
-                )
+                Spacer(modifier = Modifier.height(4.dp))
             }
 
-            items(mensajes) { mensaje ->
-
-                MensajeChatItem(
-                    mensaje = mensaje
+            items(messages) { message ->
+                ChatMessageItem(
+                    message = message
                 )
             }
 
             item {
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
             }
         }
 
-        // Caja para escribir
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -279,21 +253,18 @@ fun ContactarScreen() {
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Text(
                 text = "▧",
                 fontSize = 22.sp,
                 color = Color(0xFF17345F)
             )
 
-            Spacer(
-                modifier = Modifier.width(8.dp)
-            )
+            Spacer(modifier = Modifier.width(8.dp))
 
             OutlinedTextField(
-                value = mensajeEscrito,
-                onValueChange = {
-                    mensajeEscrito = it
+                value = draftMessage,
+                onValueChange = { value ->
+                    draftMessage = value
                 },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
@@ -306,24 +277,20 @@ fun ContactarScreen() {
                 shape = RoundedCornerShape(18.dp)
             )
 
-            Spacer(
-                modifier = Modifier.width(7.dp)
-            )
+            Spacer(modifier = Modifier.width(7.dp))
 
             FloatingActionButton(
                 onClick = {
-
-                    if (mensajeEscrito.isNotBlank()) {
-
-                        mensajes.add(
-                            MensajeChat(
-                                texto = mensajeEscrito,
-                                hora = "Ahora",
-                                esMio = true
+                    if (draftMessage.isNotBlank()) {
+                        messages.add(
+                            ChatMessage(
+                                text = draftMessage,
+                                timestamp = "Ahora",
+                                isMine = true
                             )
                         )
 
-                        mensajeEscrito = ""
+                        draftMessage = ""
                     }
                 },
                 modifier = Modifier.size(40.dp),
@@ -331,7 +298,6 @@ fun ContactarScreen() {
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
-
                 Text(
                     text = "➤",
                     fontSize = 17.sp
@@ -342,27 +308,25 @@ fun ContactarScreen() {
 }
 
 @Composable
-fun MensajeChatItem(
-    mensaje: MensajeChat
+fun ChatMessageItem(
+    message: ChatMessage,
+    modifier: Modifier = Modifier
 ) {
-
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
-
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = if (mensaje.esMio) {
+            horizontalArrangement = if (message.isMine) {
                 Arrangement.End
             } else {
                 Arrangement.Start
             }
         ) {
-
             Box(
                 modifier = Modifier
                     .background(
-                        color = if (mensaje.esMio) {
+                        color = if (message.isMine) {
                             Color(0xFF17345F)
                         } else {
                             Color(0xFFDDE6F0)
@@ -374,10 +338,9 @@ fun MensajeChatItem(
                         vertical = 9.dp
                     )
             ) {
-
                 Text(
-                    text = mensaje.texto,
-                    color = if (mensaje.esMio) {
+                    text = message.text,
+                    color = if (message.isMine) {
                         Color.White
                     } else {
                         Color(0xFF263238)
@@ -388,7 +351,7 @@ fun MensajeChatItem(
         }
 
         Text(
-            text = mensaje.hora,
+            text = message.timestamp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
@@ -397,10 +360,10 @@ fun MensajeChatItem(
                 ),
             fontSize = 9.sp,
             color = Color.Gray,
-            textAlign = if (mensaje.esMio) {
-                androidx.compose.ui.text.style.TextAlign.End
+            textAlign = if (message.isMine) {
+                TextAlign.End
             } else {
-                androidx.compose.ui.text.style.TextAlign.Start
+                TextAlign.Start
             }
         )
     }
