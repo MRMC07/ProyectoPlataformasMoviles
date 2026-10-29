@@ -29,12 +29,12 @@ private object Routes {
     const val DETAIL = "detail/{listingId}"
     const val CONTACT = "contact/{listingId}"
 
-    fun detail(id: String): String {
-        return "detail/${Uri.encode(id)}"
+    fun detail(listingId: String): String {
+        return "detail/${Uri.encode(listingId)}"
     }
 
-    fun contact(id: String): String {
-        return "contact/${Uri.encode(id)}"
+    fun contact(listingId: String): String {
+        return "contact/${Uri.encode(listingId)}"
     }
 }
 
@@ -50,11 +50,11 @@ fun AppNavigation(
         startDestination = Routes.HOME
     ) {
         composable(Routes.HOME) {
-            val state by homeViewModel.uiState
+            val homeState by homeViewModel.uiState
                 .collectAsStateWithLifecycle()
 
             HomeScreen(
-                state = state,
+                state = homeState,
                 onListingClick = { listingId ->
                     navController.navigate(
                         Routes.detail(listingId)
@@ -74,8 +74,8 @@ fun AppNavigation(
                     type = NavType.StringType
                 }
             )
-        ) { entry ->
-            val listingId = entry.arguments
+        ) { backStackEntry ->
+            val listingId = backStackEntry.arguments
                 ?.getString("listingId")
                 .orEmpty()
 
@@ -90,11 +90,11 @@ fun AppNavigation(
                 }
             )
 
-            val state by detailViewModel.uiState
+            val detailState by detailViewModel.uiState
                 .collectAsStateWithLifecycle()
 
             DetailScreen(
-                state = state,
+                state = detailState,
                 onBackClick = {
                     navController.popBackStack()
                 },
@@ -118,17 +118,17 @@ fun AppNavigation(
                 }
             )
 
-            val state by publishViewModel.uiState
+            val publishState by publishViewModel.uiState
                 .collectAsStateWithLifecycle()
 
-            LaunchedEffect(state.isPublished) {
-                if (state.isPublished) {
+            LaunchedEffect(publishState.isPublished) {
+                if (publishState.isPublished) {
                     navController.popBackStack()
                 }
             }
 
             PublishScreen(
-                state = state,
+                state = publishState,
                 onTitleChange = publishViewModel::onTitleChange,
                 onDescriptionChange =
                     publishViewModel::onDescriptionChange,
@@ -149,8 +149,8 @@ fun AppNavigation(
                     type = NavType.StringType
                 }
             )
-        ) { entry ->
-            val listingId = entry.arguments
+        ) { backStackEntry ->
+            val listingId = backStackEntry.arguments
                 ?.getString("listingId")
                 .orEmpty()
 
