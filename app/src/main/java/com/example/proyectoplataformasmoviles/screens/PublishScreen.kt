@@ -1,3 +1,4 @@
+
 package com.example.proyectoplataformasmoviles.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -6,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -23,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.proyectoplataformasmoviles.presentation.publish.PublishUiState
@@ -57,16 +60,23 @@ fun PublishScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             TextButton(onClick = onBackClick) {
-                Text("Volver")
+                Text("← Regresar")
             }
 
             Text(
-                text = "Publicar",
-                style = MaterialTheme.typography.headlineMedium
+                text = "Nueva publicación",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = "Comparte tu producto o servicio " +
+                    "con la comunidad.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             OutlinedTextField(
@@ -74,14 +84,19 @@ fun PublishScreen(
                 onValueChange = onTitleChange,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canEdit,
-                label = {
-                    Text("Título del producto o servicio")
+                label = { Text("Título") },
+                placeholder = {
+                    Text("Ej. Tutorías de matemáticas")
                 },
                 singleLine = true,
-                isError = state.titleError != null,
+                shape = RoundedCornerShape(12.dp),
+                isError = state.titleTouched &&
+                    state.titleError != null,
                 supportingText = {
-                    state.titleError?.let { message ->
-                        Text(message)
+                    if (state.titleTouched) {
+                        state.titleError?.let { message ->
+                            Text(message)
+                        }
                     }
                 }
             )
@@ -91,14 +106,20 @@ fun PublishScreen(
                 onValueChange = onDescriptionChange,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canEdit,
-                label = {
-                    Text("Descripción")
+                label = { Text("Descripción") },
+                placeholder = {
+                    Text("Describe lo que estás ofreciendo")
                 },
                 minLines = 3,
-                isError = state.descriptionError != null,
+                maxLines = 6,
+                shape = RoundedCornerShape(12.dp),
+                isError = state.descriptionTouched &&
+                    state.descriptionError != null,
                 supportingText = {
-                    state.descriptionError?.let { message ->
-                        Text(message)
+                    if (state.descriptionTouched) {
+                        state.descriptionError?.let { message ->
+                            Text(message)
+                        }
                     }
                 }
             )
@@ -108,22 +129,32 @@ fun PublishScreen(
                 onValueChange = onPriceChange,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canEdit,
-                label = {
-                    Text("Precio en quetzales")
-                },
+                label = { Text("Precio en quetzales") },
+                placeholder = { Text("Ej. 150.00") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal
                 ),
-                isError = state.priceError != null,
+                shape = RoundedCornerShape(12.dp),
+                isError = state.priceTouched &&
+                    state.priceError != null,
                 supportingText = {
-                    state.priceError?.let { message ->
-                        Text(message)
+                    if (state.priceTouched) {
+                        state.priceError?.let { message ->
+                            Text(message)
+                        }
                     }
                 }
             )
 
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Categoría",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
                 Button(
                     onClick = {
                         isCategoryMenuExpanded = true
@@ -131,7 +162,7 @@ fun PublishScreen(
                     enabled = canEdit
                 ) {
                     Text(
-                        text = state.category.ifBlank {
+                        state.category.ifBlank {
                             "Seleccionar categoría"
                         }
                     )
@@ -145,9 +176,7 @@ fun PublishScreen(
                 ) {
                     categories.forEach { category ->
                         DropdownMenuItem(
-                            text = {
-                                Text(category)
-                            },
+                            text = { Text(category) },
                             onClick = {
                                 onCategoryChange(category)
                                 isCategoryMenuExpanded = false
@@ -155,13 +184,15 @@ fun PublishScreen(
                         )
                     }
                 }
-            }
 
-            state.categoryError?.let { message ->
-                Text(
-                    text = message,
-                    color = MaterialTheme.colorScheme.error
-                )
+                if (state.categoryTouched) {
+                    state.categoryError?.let { message ->
+                        Text(
+                            text = message,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
 
             state.errorMessage?.let { message ->
@@ -173,15 +204,22 @@ fun PublishScreen(
 
             if (state.isSaving) {
                 CircularProgressIndicator()
-                Text("Guardando publicación…")
+                Text("Guardando publicación...")
             }
 
             Button(
                 onClick = onPublishClick,
                 enabled = state.canPublish,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Publicar")
+                Text(
+                    if (state.isSaving) {
+                        "Publicando..."
+                    } else {
+                        "Publicar"
+                    }
+                )
             }
         }
     }
