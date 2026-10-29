@@ -1,5 +1,7 @@
+
 package com.example.proyectoplataformasmoviles.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +23,21 @@ import com.example.proyectoplataformasmoviles.screens.DetailScreen
 import com.example.proyectoplataformasmoviles.screens.HomeScreen
 import com.example.proyectoplataformasmoviles.screens.PublishScreen
 
+private object Routes {
+    const val HOME = "home"
+    const val PUBLISH = "publish"
+    const val DETAIL = "detail/{listingId}"
+    const val CONTACT = "contact/{listingId}"
+
+    fun detail(id: String): String {
+        return "detail/${Uri.encode(id)}"
+    }
+
+    fun contact(id: String): String {
+        return "contact/${Uri.encode(id)}"
+    }
+}
+
 @Composable
 fun AppNavigation(
     homeViewModel: HomeViewModel,
@@ -30,33 +47,35 @@ fun AppNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = Routes.HOME
     ) {
-        composable("home") {
-            val homeState by homeViewModel.uiState
+        composable(Routes.HOME) {
+            val state by homeViewModel.uiState
                 .collectAsStateWithLifecycle()
 
             HomeScreen(
-                state = homeState,
+                state = state,
                 onListingClick = { listingId ->
-                    navController.navigate("detail/$listingId")
+                    navController.navigate(
+                        Routes.detail(listingId)
+                    )
                 },
                 onPublishClick = {
-                    navController.navigate("publish")
+                    navController.navigate(Routes.PUBLISH)
                 },
                 onRetryClick = homeViewModel::onRetryClick
             )
         }
 
         composable(
-            route = "detail/{listingId}",
+            route = Routes.DETAIL,
             arguments = listOf(
                 navArgument("listingId") {
                     type = NavType.StringType
                 }
             )
-        ) { backStackEntry ->
-            val listingId = backStackEntry.arguments
+        ) { entry ->
+            val listingId = entry.arguments
                 ?.getString("listingId")
                 .orEmpty()
 
@@ -71,22 +90,24 @@ fun AppNavigation(
                 }
             )
 
-            val detailState by detailViewModel.uiState
+            val state by detailViewModel.uiState
                 .collectAsStateWithLifecycle()
 
             DetailScreen(
-                state = detailState,
+                state = state,
                 onBackClick = {
                     navController.popBackStack()
                 },
                 onContactClick = {
-                    navController.navigate("contact")
+                    navController.navigate(
+                        Routes.contact(listingId)
+                    )
                 },
                 onRetryClick = detailViewModel::onRetryClick
             )
         }
 
-        composable("publish") {
+        composable(Routes.PUBLISH) {
             val publishViewModel: PublishViewModel = viewModel(
                 factory = viewModelFactory {
                     initializer {
@@ -97,21 +118,23 @@ fun AppNavigation(
                 }
             )
 
-            val publishState by publishViewModel.uiState
+            val state by publishViewModel.uiState
                 .collectAsStateWithLifecycle()
 
-            LaunchedEffect(publishState.isPublished) {
-                if (publishState.isPublished) {
+            LaunchedEffect(state.isPublished) {
+                if (state.isPublished) {
                     navController.popBackStack()
                 }
             }
 
             PublishScreen(
-                state = publishState,
+                state = state,
                 onTitleChange = publishViewModel::onTitleChange,
-                onDescriptionChange = publishViewModel::onDescriptionChange,
+                onDescriptionChange =
+                    publishViewModel::onDescriptionChange,
                 onPriceChange = publishViewModel::onPriceChange,
-                onCategoryChange = publishViewModel::onCategoryChange,
+                onCategoryChange =
+                    publishViewModel::onCategoryChange,
                 onPublishClick = publishViewModel::onPublishClick,
                 onBackClick = {
                     navController.popBackStack()
@@ -119,8 +142,24 @@ fun AppNavigation(
             )
         }
 
-        composable("contact") {
-            ContactScreen()
+        composable(
+            route = Routes.CONTACT,
+            arguments = listOf(
+                navArgument("listingId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { entry ->
+            val listingId = entry.arguments
+                ?.getString("listingId")
+                .orEmpty()
+
+            ContactScreen(
+                listingId = listingId,
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
