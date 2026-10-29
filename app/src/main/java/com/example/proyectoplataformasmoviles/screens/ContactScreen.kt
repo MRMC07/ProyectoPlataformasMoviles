@@ -1,6 +1,8 @@
+
 package com.example.proyectoplataformasmoviles.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -35,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 data class ChatMessage(
+    val id: Long,
     val text: String,
     val timestamp: String,
     val isMine: Boolean
@@ -42,32 +46,43 @@ data class ChatMessage(
 
 @Composable
 fun ContactScreen(
+    listingId: String,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var draftMessage by remember { mutableStateOf("") }
+    var draftMessage by remember(listingId) {
+        mutableStateOf("")
+    }
 
-    val messages = remember {
+    val messages = remember(listingId) {
         mutableStateListOf(
             ChatMessage(
+                id = 1L,
                 text = "¡Hola! ¿En qué puedo ayudarte? " +
-                        "La tutoría puede ser virtual o presencial.",
+                    "La tutoría puede ser virtual o presencial.",
                 timestamp = "10:42 AM",
                 isMine = false
             ),
             ChatMessage(
+                id = 2L,
                 text = "Hola, me interesa la tutoría. " +
-                        "¿En qué zona te encuentras para ver si podemos " +
-                        "hacerla presencial?",
+                    "¿En qué zona te encuentras para ver si podemos " +
+                    "hacerla presencial?",
                 timestamp = "10:45 AM",
                 isMine = true
             ),
             ChatMessage(
+                id = 3L,
                 text = "Estoy por la zona centro. También podemos hacer " +
-                        "la tutoría en línea si te queda mejor.",
+                    "la tutoría en línea si te queda mejor.",
                 timestamp = "10:48 AM",
                 isMine = false
             )
         )
+    }
+
+    var nextMessageId by remember(listingId) {
+        mutableStateOf(4L)
     }
 
     Column(
@@ -87,7 +102,10 @@ fun ContactScreen(
         ) {
             Text(
                 text = "←",
-                fontSize = 26.sp
+                fontSize = 26.sp,
+                modifier = Modifier
+                    .clickable(onClick = onBackClick)
+                    .padding(4.dp)
             )
 
             Spacer(modifier = Modifier.width(10.dp))
@@ -215,7 +233,7 @@ fun ContactScreen(
 
             Text(
                 text = "Recuerda: acuerda los detalles de la tutoría " +
-                        "antes de realizar cualquier pago.",
+                    "antes de realizar cualquier pago.",
                 fontSize = 11.sp,
                 color = Color(0xFF126B43)
             )
@@ -232,7 +250,10 @@ fun ContactScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            items(messages) { message ->
+            items(
+                items = messages,
+                key = { message -> message.id }
+            ) { message ->
                 ChatMessageItem(
                     message = message
                 )
@@ -284,12 +305,14 @@ fun ContactScreen(
                     if (draftMessage.isNotBlank()) {
                         messages.add(
                             ChatMessage(
-                                text = draftMessage,
+                                id = nextMessageId,
+                                text = draftMessage.trim(),
                                 timestamp = "Ahora",
                                 isMine = true
                             )
                         )
 
+                        nextMessageId++
                         draftMessage = ""
                     }
                 },
