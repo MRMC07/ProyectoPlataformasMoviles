@@ -1,4 +1,3 @@
-
 package com.example.proyectoplataformasmoviles.screens
 
 import androidx.compose.foundation.background
@@ -8,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -22,9 +20,9 @@ fun ConnectionBanner(
                     "Tus borradores siguen disponibles.",
             modifier = modifier
                 .fillMaxWidth()
-                .background(Color(0xFFFFE6B3))
+                .background(MaterialTheme.colorScheme.errorContainer)
                 .padding(12.dp),
-            color = Color(0xFF664400),
+            color = MaterialTheme.colorScheme.onErrorContainer,
             style = MaterialTheme.typography.bodyMedium
         )
     }

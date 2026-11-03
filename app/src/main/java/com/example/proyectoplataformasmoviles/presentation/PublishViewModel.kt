@@ -1,10 +1,10 @@
-
 package com.example.proyectoplataformasmoviles.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectoplataformasmoviles.local.DraftEntity
 import com.example.proyectoplataformasmoviles.local.DraftRepository
+import com.example.proyectoplataformasmoviles.remote.ListingRepository
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +23,7 @@ data class PublishUiState(
     val priceTouched: Boolean = false,
     val isSubmitting: Boolean = false,
     val isSaved: Boolean = false,
+    val isQueued: Boolean = false,
     val notice: String? = null,
     val errorMessage: String? = null
 ) {
@@ -75,18 +76,18 @@ data class PublishUiState(
     val canSubmit: Boolean
         get() = isValid &&
                 !isSubmitting &&
-                !isSaved
+                !isSaved &&
+                !isQueued
 }
 
 class PublishViewModel(
-    private val repository: DraftRepository
+    private val draftRepository: DraftRepository,
+    private val listingRepository: ListingRepository
 ) : ViewModel() {
 
-    private val _uiState =
-        MutableStateFlow(PublishUiState())
+    private val _uiState = MutableStateFlow(PublishUiState())
 
-    val uiState: StateFlow<PublishUiState> =
-        _uiState.asStateFlow()
+    val uiState: StateFlow<PublishUiState> = _uiState.asStateFlow()
 
     private val draftId = UUID.randomUUID().toString()
 
@@ -138,6 +139,8 @@ class PublishViewModel(
 
         if (!currentState.canSubmit) return
 
+        val price = currentState.price.trim().toDoubleOrNull() ?: return
+
         val draft = DraftEntity(
             id = draftId,
             title = currentState.title.trim(),
@@ -157,14 +160,37 @@ class PublishViewModel(
 
         viewModelScope.launch {
             try {
-                repository.saveDraft(draft)
+                draftRepository.saveDraft(draft)
 
-                _uiState.update { state ->
-                    state.copy(
-                        isSubmitting = false,
-                        isSaved = true,
-                        notice = "Borrador guardado correctamente."
-                    )
+                val confirmed = listingRepository.createListing(
+                    title = draft.title,
+                    description = draft.description,
+                    price = price,
+                    category = draft.category,
+                    sellerName = DEFAULT_SELLER_NAME,
+                    imageUrl = DEFAULT_IMAGE_URL
+                )
+
+                if (confirmed) {
+                    draftRepository.deleteDraft(draftId)
+
+                    _uiState.update { state ->
+                        state.copy(
+                            isSubmitting = false,
+                            isSaved = true,
+                            notice = "Publicación enviada correctamente."
+                        )
+                    }
+                } else {
+                    _uiState.update { state ->
+                        state.copy(
+                            isSubmitting = false,
+                            isQueued = true,
+                            notice = "Sin conexión. Tu publicación quedó " +
+                                    "guardada en este dispositivo y se " +
+                                    "enviará al recuperar la conexión."
+                        )
+                    }
                 }
             } catch (exception: CancellationException) {
                 throw exception
@@ -172,11 +198,17 @@ class PublishViewModel(
                 _uiState.update { state ->
                     state.copy(
                         isSubmitting = false,
-                        errorMessage =
-                            "No se pudo guardar el borrador."
+                        errorMessage = "No se pudo publicar. Intenta de nuevo."
                     )
                 }
             }
         }
+    }
+
+    private companion object {
+        const val DEFAULT_SELLER_NAME = "Estudiante emprendedor"
+        const val DEFAULT_IMAGE_URL =
+            "https://images.unsplash.com/photo-1522202176988-66273c2fd55f" +
+                    "?auto=format&fit=crop&w=600&q=80"
     }
 }

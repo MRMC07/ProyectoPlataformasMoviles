@@ -1,4 +1,3 @@
-
 package com.example.proyectoplataformasmoviles.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -7,11 +6,17 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -19,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.proyectoplataformasmoviles.model.ListingCategory
 import com.example.proyectoplataformasmoviles.presentation.MyProductsUiState
 
 @Composable
@@ -32,12 +38,10 @@ fun MyProductsScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TextButton(
+            BackButton(
                 onClick = onBackClick,
-                modifier = Modifier.padding(top = 28.dp)
-            ) {
-                Text("← Regresar")
-            }
+                modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+            )
         },
         bottomBar = {
             Button(
@@ -46,7 +50,14 @@ fun MyProductsScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("+ Crear publicación")
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text("Crear publicación")
             }
         }
     ) { innerPadding ->
@@ -82,25 +93,21 @@ fun MyProductsScreen(
 
                 state.isEmpty -> {
                     Text(
-                        text = "Todavía no tenés borradores guardados.",
+                        text = "Todavía no tienes borradores guardados.",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
 
                 else -> {
                     LazyColumn(
-                        contentPadding =
-                            PaddingValues(bottom = 16.dp),
-                        verticalArrangement =
-                            Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(
                             items = state.drafts,
                             key = { draft -> draft.id }
                         ) { draft ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(
                                     modifier = Modifier.padding(16.dp),
                                     verticalArrangement =
@@ -108,8 +115,8 @@ fun MyProductsScreen(
                                 ) {
                                     Text(
                                         text = draft.title,
-                                        style =
-                                            MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography
+                                            .titleMedium
                                     )
 
                                     Text(
@@ -117,14 +124,15 @@ fun MyProductsScreen(
                                         maxLines = 3
                                     )
 
-                                    Text(
-                                        text = "Q${draft.price}"
-                                    )
+                                    Text(text = "Q${draft.price}")
 
                                     Text(
-                                        text = draft.category,
-                                        color =
-                                            MaterialTheme.colorScheme.primary
+                                        text = ListingCategory
+                                            .fromId(draft.category)
+                                            ?.label
+                                            ?: draft.category,
+                                        color = MaterialTheme.colorScheme
+                                            .primary
                                     )
 
                                     TextButton(
@@ -132,6 +140,15 @@ fun MyProductsScreen(
                                             onDeleteDraft(draft.id)
                                         }
                                     ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = null
+                                        )
+
+                                        Spacer(
+                                            modifier = Modifier.width(8.dp)
+                                        )
+
                                         Text("Eliminar borrador")
                                     }
                                 }
