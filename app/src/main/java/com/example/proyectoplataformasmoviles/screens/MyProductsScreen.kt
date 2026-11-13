@@ -46,7 +46,7 @@ fun MyProductsScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("+ Crear publicación")
+                Text("+ Crear borrador")
             }
         }
     ) { innerPadding ->
@@ -58,7 +58,7 @@ fun MyProductsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Mis productos",
+                text = "Mis borradores",
                 style = MaterialTheme.typography.headlineMedium
             )
 

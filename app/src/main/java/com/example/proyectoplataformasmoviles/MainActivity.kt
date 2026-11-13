@@ -6,6 +6,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.room.Room
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.proyectoplataformasmoviles.di.AppContainer
+import com.example.proyectoplataformasmoviles.presentation.home.HomeViewModel
 import com.example.proyectoplataformasmoviles.local.AppDatabase
 import com.example.proyectoplataformasmoviles.local.DraftRepository
 import com.example.proyectoplataformasmoviles.navigation.AppNavigation
@@ -27,14 +32,22 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private val contenedor by lazy { AppContainer() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
 
+        val fabrica = viewModelFactory {
+            initializer { HomeViewModel(contenedor.listingRepository) }
+        }
+        val modeloInicio = ViewModelProvider(this, fabrica)[HomeViewModel::class.java]
         setContent {
             ProyectoPlataformasMovilesTheme {
                 AppNavigation(
+                    homeViewModel = modeloInicio,
+                    listingRepository = contenedor.listingRepository,
                     draftRepository = draftRepository
                 )
             }

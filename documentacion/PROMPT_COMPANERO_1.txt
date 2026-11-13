@@ -1,0 +1,33 @@
+Actuá como responsable de solicitudes y chat de Nexora. Implementá en este repositorio Android existente, no generes otro proyecto.
+
+Primero leé documentacion/ESTADO_Y_CONTINUIDAD.txt, instrucciones del repositorio, estado Git y código real. Conservá cambios ajenos. Trabajá en una rama como funcionalidad/solicitudes-chat desde la base compartida; no publiques, hagas push o merge automáticamente.
+
+CONTEXTO
+Nexora conecta estudiantes de todas las universidades de Guatemala. Kotlin, Compose, Material 3, verde/blanco y diseño aprobado. Firebase Authentication correo/contraseña; Realtime Database de proyectoplataformasmovil-86f6e. Catálogo real en products y borradores locales Room. No cambiar paquete, servidor, esquema Room ni migrar a Firestore.
+Ya existen cuentas, catálogo, publicaciones y detalle. La consulta activa termina en ContactoConectado y prepara un correo con modalidad/horario/nota. ContactScreen es un prototipo; no confundirlo con chat conectado.
+
+OBJETIVO
+Implementar una solicitud persistente y chat básico comprador-vendedor: listar y reabrir conversaciones propias, enviar texto y reflejar mensajes entre dos cuentas. Sin pagos, adjuntos, llamadas, push ni indicadores de escritura en esta tarea.
+
+CONTRATO CON EL COMPAÑERO 2
+Documentar y acordar antes de integrar el contrato de solicitudes que habilitará reseñas. Propuesta inicial, todavía NO implementada:
+solicitudes/{id}: publicacionId, compradorId, vendedorId, precioCentavos de referencia, modalidad, horarioPropuesto, nota, estado, creadaEn.
+Estados propuestos pendiente/aceptada/completada/cancelada. Definir y validar quién puede hacer cada transición, sin permitir edición libre del estado. Propuesta: vendedor acepta y marca completada tras realizar el servicio; documentar esta política y sus límites. No representa un pago verificado.
+conversaciones/{solicitudId}/mensajes/{id}: autorId, texto, creadaEn.
+Si se necesitan índices por usuario, diseñarlos con las consultas/reglas: las reglas de Realtime Database no filtran lecturas amplias. No abrir la raíz para que funcione la bandeja.
+Dejá el contrato definitivo y transiciones en un documento del repositorio para el compañero 2. Su IA no conoce esta conversación.
+
+CRITERIOS
+- Solo participantes autenticados pueden leer/enviar. Bloquear anónimos y terceros.
+- Identidad derivada del UID; impedir suplantación, compras propias y autores falsos. Validar tipos, campos, longitud y timestamp del servidor.
+- Evitar duplicados por doble toque/reintento y definir cómo se crea/reutiliza la solicitud/conversación.
+- Carga, errores, sesión cerrada, anuncio retirado y falta de conexión con estados honestos, sin “enviado” antes de confirmación.
+- ViewModel/repositorios sencillos y listeners con limpieza. Componentes oficiales. Nuevos nombres/comentarios/textos en español; no renombrar masivamente lo heredado.
+- Conservar diseño y contacto por correo hasta probar el reemplazo conectado. No inventar mensajes, participantes o verificaciones.
+- Coordinar AppNavigation.kt, AppContainer.kt, modelos compartidos y servidor/database.rules.json; preservar permisos de products y cambios del otro compañero.
+- Probar reglas locales en emulador con participantes y terceros. No desplegar reglas ni modificar producción sin autorización explícita del equipo.
+
+ENTREGA
+Implementá archivos, no solo un plan. Ejecutá assembleDebug, testDebugUnitTest, lintDebug y comprobaciones relevantes. Probar dos cuentas participantes y una tercera sin acceso con datos controlados. No crear usuarios ni enviar mensajes reales en producción sin autorización.
+Si falta configuración o no podés ejecutar algo, declaralo con precisión; no reemplaces backend con datos ficticios.
+Actualizá documentación y entregá archivos cambiados, contrato para reseñas, pruebas ejecutadas y pendientes. Prepará cambios revisables, sin push/merge automático.
