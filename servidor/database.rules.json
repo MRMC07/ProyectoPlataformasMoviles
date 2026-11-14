@@ -87,8 +87,8 @@
                                   ".read":  "auth != null",
                                   "$listingId":  {
                                                      "$userId":  {
-                                                                     ".write":  "auth != null \u0026\u0026 auth.uid === $userId \u0026\u0026 auth.token.email != null \u0026\u0026 auth.token.firebase.sign_in_provider !== \u0027anonymous\u0027 \u0026\u0026 newData.exists() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).exists() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).isString() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).val() !== auth.uid \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027isActive\u0027).val() !== false",
-                                                                     ".validate":  "newData.hasChildren([\u0027authorName\u0027,\u0027rating\u0027,\u0027comment\u0027,\u0027createdAt\u0027,\u0027updatedAt\u0027])",
+                                                                     ".write":  "auth != null \u0026\u0026 auth.uid === $userId \u0026\u0026 auth.token.email != null \u0026\u0026 auth.token.firebase.sign_in_provider !== \u0027anonymous\u0027 \u0026\u0026 newData.exists() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).exists() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).isString() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).val() !== auth.uid \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027isActive\u0027).val() !== false \u0026\u0026 newData.child(\u0027requestId\u0027).isString() \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027customerId\u0027).val() === auth.uid \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027listingId\u0027).val() === $listingId \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027providerId\u0027).val() === root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).val() \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027status\u0027).val() === \u0027COMPLETED\u0027",
+                                                                     ".validate":  "newData.hasChildren([\u0027authorName\u0027,\u0027rating\u0027,\u0027comment\u0027,\u0027createdAt\u0027,\u0027updatedAt\u0027,\u0027requestId\u0027])",
                                                                      "authorName":  {
                                                                                         ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 80"
                                                                                     },
@@ -106,7 +106,10 @@
                                                                                    },
                                                                      "$other":  {
                                                                                     ".validate":  false
-                                                                                }
+                                                                                },
+                                                                     "requestId":  {
+                                                                                       ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 128"
+                                                                                   }
                                                                  }
                                                  }
                               },

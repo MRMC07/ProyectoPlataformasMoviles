@@ -8,6 +8,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -19,12 +21,14 @@ data class ReviewsUiState(
     val comment: String = "",
     val isSaving: Boolean = false,
     val saveErrorMessage: String? = null,
-    val notice: String? = null
+    val notice: String? = null,
+    val completedRequestId: String? = null
 ) {
     val canSave: Boolean
         get() = !isLoading &&
                 errorMessage == null &&
                 !isSaving &&
+                completedRequestId != null &&
                 rating in 1..5 &&
                 comment.trim().length in 1..500
 }
@@ -118,7 +122,7 @@ class ReviewsViewModel(
                 _uiState.update {
                     it.copy(
                         isSaving = false,
-                        saveErrorMessage = "No pudimos confirmar la reseña. Revisá tu conexión y que la publicación siga activa. Si el envío quedó pendiente, podría completarse al recuperar la conexión."
+                        saveErrorMessage = "No pudimos confirmar la reseña. Revisá tu conexión, que la publicación siga activa y que tengas una solicitud completada. Si el envío quedó pendiente, podría completarse al recuperar la conexión."
                     )
                 }
             }
@@ -137,7 +141,21 @@ class ReviewsViewModel(
 
         observationJob = viewModelScope.launch {
             try {
-                repository.observeReviews(listingId).collect { reviews ->
+                val completedRequest = if (userId == null) {
+                    flowOf<String?>(null)
+                } else {
+                    repository.observeCompletedRequestId(
+                        listingId = listingId,
+                        userId = userId
+                    )
+                }
+
+                combine(
+                    repository.observeReviews(listingId),
+                    completedRequest
+                ) { reviews, requestId ->
+                    reviews to requestId
+                }.collect { (reviews, requestId) ->
                     val ownReview = reviews.firstOrNull {
                         it.userId == userId
                     }
@@ -145,6 +163,7 @@ class ReviewsViewModel(
                     _uiState.update { state ->
                         state.copy(
                             reviews = reviews,
+                            completedRequestId = requestId,
                             isLoading = false,
                             errorMessage = null,
                             rating = if (
@@ -170,7 +189,7 @@ class ReviewsViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "No se pudieron cargar las reseñas. Revisá tu conexión."
+                        errorMessage = "No se pudieron cargar las reseñas o comprobar tus solicitudes. Revisá tu conexión."
                     )
                 }
             }

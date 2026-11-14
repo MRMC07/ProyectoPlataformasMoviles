@@ -158,6 +158,12 @@ fun ListingReviews(
                         )
                     }
 
+                    state.completedRequestId == null -> {
+                        Text(
+                            "Podrás escribir una reseña cuando quien ofrece el servicio marque tu solicitud como completada."
+                        )
+                    }
+
                     else -> {
                         Text(
                             text = if (ownReview == null) {

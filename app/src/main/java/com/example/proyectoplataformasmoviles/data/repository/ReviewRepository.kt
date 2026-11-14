@@ -6,8 +6,8 @@ import com.example.proyectoplataformasmoviles.domain.model.summarizeReviews
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.Query
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.channels.awaitClose
@@ -23,6 +23,7 @@ class ReviewRepository(
 ) {
     private val reviews = database.getReference("reviews")
     private val listings = database.getReference("products")
+    private val requests = database.getReference("requests")
 
     fun observeReviews(listingId: String): Flow<List<ListingReview>> {
         return observeSnapshot(reviews.child(listingId)).map { snapshot ->
@@ -41,6 +42,22 @@ class ReviewRepository(
         }
     }
 
+    fun observeCompletedRequestId(
+        listingId: String,
+        userId: String
+    ): Flow<String?> {
+        val query = requests.orderByChild("customerId")
+            .equalTo(userId)
+
+        return observeSnapshot(query).map { snapshot ->
+            findCompletedRequestId(
+                snapshot = snapshot,
+                listingId = listingId,
+                userId = userId
+            )
+        }
+    }
+
     suspend fun saveReview(
         listingId: String,
         userId: String,
@@ -49,7 +66,9 @@ class ReviewRepository(
     ) {
         val user = authentication.currentUser
             ?.takeUnless { it.isAnonymous || it.email == null }
-            ?: error("Iniciá sesión con tu cuenta para escribir una reseña.")
+            ?: error(
+                "Iniciá sesión con tu cuenta para escribir una reseña."
+            )
 
         check(user.uid == userId) {
             "La sesión cambió. Volvé a abrir la publicación."
@@ -88,6 +107,23 @@ class ReviewRepository(
             "No se pueden guardar reseñas en una publicación retirada."
         }
 
+        val requestSnapshot = withTimeoutOrNull(10_000L) {
+            requests.orderByChild("customerId")
+                .equalTo(userId)
+                .get()
+                .await()
+        } ?: error(
+            "No pudimos consultar tus solicitudes. Revisá tu conexión."
+        )
+
+        val completedRequestId = findCompletedRequestId(
+            snapshot = requestSnapshot,
+            listingId = listingId,
+            userId = userId
+        ) ?: error(
+            "Necesitás una solicitud completada de este servicio para escribir una reseña."
+        )
+
         val existingReview = withTimeoutOrNull(10_000L) {
             reference.get().await()
         } ?: error(
@@ -99,6 +135,7 @@ class ReviewRepository(
         }
 
         val changes = mutableMapOf<String, Any>(
+            "requestId" to completedRequestId,
             "authorName" to user.displayName.orEmpty()
                 .trim()
                 .take(80)
@@ -124,7 +161,21 @@ class ReviewRepository(
         }
     }
 
-    private fun parseReview(snapshot: DataSnapshot): ListingReview? {
+    private fun findCompletedRequestId(
+        snapshot: DataSnapshot,
+        listingId: String,
+        userId: String
+    ): String? {
+        return snapshot.children.firstOrNull {
+            it.child("listingId").value == listingId &&
+                    it.child("customerId").value == userId &&
+                    it.child("status").value == "COMPLETED"
+        }?.key
+    }
+
+    private fun parseReview(
+        snapshot: DataSnapshot
+    ): ListingReview? {
         val userId = snapshot.key ?: return null
 
         val authorName = snapshot.child("authorName").value as? String
@@ -166,7 +217,7 @@ class ReviewRepository(
     }
 
     private fun observeSnapshot(
-        reference: DatabaseReference
+        reference: Query
     ): Flow<DataSnapshot> = callbackFlow {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
