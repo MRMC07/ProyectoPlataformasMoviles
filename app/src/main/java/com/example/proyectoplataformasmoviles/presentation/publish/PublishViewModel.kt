@@ -1,5 +1,7 @@
 package com.example.proyectoplataformasmoviles.presentation.publish
 
+import android.content.ContentResolver
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectoplataformasmoviles.domain.model.Listing
@@ -7,10 +9,12 @@ import com.example.proyectoplataformasmoviles.domain.repository.ListingRepositor
 import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.example.proyectoplataformasmoviles.domain.model.importeEnCentavos as parsePriceInCents
 
 data class PublishUiState(
@@ -25,7 +29,10 @@ data class PublishUiState(
     val isSaving: Boolean = false,
     val isPublished: Boolean = false,
     val errorMessage: String? = null,
-    val isEditing: Boolean = false
+    val isEditing: Boolean = false,
+    val selectedImageBase64: String? = null,
+    val removeImage: Boolean = false,
+    val isProcessingImage: Boolean = false
 ) {
     val titleError: String?
         get() = when {
@@ -69,8 +76,13 @@ data class PublishUiState(
                 priceError == null &&
                 categoryError == null
 
+    val canEditForm: Boolean
+        get() = !isSaving &&
+                !isPublished &&
+                !isProcessingImage
+
     val canPublish: Boolean
-        get() = isValid && !isSaving && !isPublished
+        get() = isValid && canEditForm
 }
 
 class PublishViewModel(
@@ -100,9 +112,7 @@ class PublishViewModel(
     val uiState = _uiState.asStateFlow()
 
     fun onTitleChange(value: String) {
-        if (_uiState.value.isSaving || _uiState.value.isPublished) {
-            return
-        }
+        if (!_uiState.value.canEditForm) return
 
         _uiState.update {
             it.copy(
@@ -114,9 +124,7 @@ class PublishViewModel(
     }
 
     fun onDescriptionChange(value: String) {
-        if (_uiState.value.isSaving || _uiState.value.isPublished) {
-            return
-        }
+        if (!_uiState.value.canEditForm) return
 
         _uiState.update {
             it.copy(
@@ -128,9 +136,7 @@ class PublishViewModel(
     }
 
     fun onPriceChange(value: String) {
-        if (_uiState.value.isSaving || _uiState.value.isPublished) {
-            return
-        }
+        if (!_uiState.value.canEditForm) return
 
         _uiState.update {
             it.copy(
@@ -142,9 +148,7 @@ class PublishViewModel(
     }
 
     fun onCategoryChange(value: String) {
-        if (_uiState.value.isSaving || _uiState.value.isPublished) {
-            return
-        }
+        if (!_uiState.value.canEditForm) return
 
         _uiState.update {
             it.copy(
@@ -155,12 +159,65 @@ class PublishViewModel(
         }
     }
 
+    fun onImageSelected(
+        contentResolver: ContentResolver,
+        uri: Uri
+    ) {
+        if (!_uiState.value.canEditForm) return
+
+        _uiState.update {
+            it.copy(
+                isProcessingImage = true,
+                errorMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            try {
+                val imageBase64 = withContext(Dispatchers.IO) {
+                    prepareListingImage(
+                        contentResolver = contentResolver,
+                        uri = uri
+                    )
+                }
+
+                _uiState.update {
+                    it.copy(
+                        selectedImageBase64 = imageBase64,
+                        removeImage = false,
+                        isProcessingImage = false,
+                        errorMessage = null
+                    )
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isProcessingImage = false,
+                        errorMessage = "No pudimos preparar esa imagen. Seleccioná otra."
+                    )
+                }
+            }
+        }
+    }
+
+    fun onRemoveImageClick() {
+        if (!_uiState.value.canEditForm) return
+
+        _uiState.update {
+            it.copy(
+                selectedImageBase64 = null,
+                removeImage = true,
+                errorMessage = null
+            )
+        }
+    }
+
     fun onPublishClick() {
         val currentState = _uiState.value
 
-        if (currentState.isSaving || currentState.isPublished) {
-            return
-        }
+        if (!currentState.canEditForm) return
 
         if (!currentState.isValid) {
             _uiState.update {
@@ -203,9 +260,16 @@ class PublishViewModel(
         viewModelScope.launch {
             try {
                 if (initialListing == null) {
-                    repository.saveListing(listing)
+                    repository.saveListing(
+                        listing = listing,
+                        imageBase64 = currentState.selectedImageBase64
+                    )
                 } else {
-                    repository.updateListing(listing)
+                    repository.updateListing(
+                        listing = listing,
+                        imageBase64 = currentState.selectedImageBase64,
+                        removeImage = currentState.removeImage
+                    )
                 }
 
                 _uiState.update {

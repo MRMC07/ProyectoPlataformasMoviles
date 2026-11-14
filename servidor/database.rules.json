@@ -40,9 +40,22 @@
         "imageUrl": {
           ".validate": "newData.isString() && newData.val().length <= 2048"
         },
+        "isActive": {
+          ".validate": "newData.isBoolean()"
+        },
+        "hasImage": {
+          ".validate": "newData.isBoolean()"
+        },
         "$otro": {
           ".validate": false
         }
+      }
+    },
+    "listingImages": {
+      "$listingId": {
+        ".read": "auth != null",
+        ".write": "auth != null && newData.parent().parent().child('products').child($listingId).child('propietario').val() === auth.uid",
+        ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100000"
       }
     },
     "perfiles": {
@@ -67,6 +80,33 @@
         },
         "$other": {
           ".validate": false
+        }
+      }
+    },
+    "reviews": {
+      ".read": "auth != null",
+      "$listingId": {
+        "$userId": {
+          ".write": "auth != null && auth.uid === $userId && auth.token.email != null && auth.token.firebase.sign_in_provider !== 'anonymous' && newData.exists() && root.child('products').child($listingId).exists() && root.child('products').child($listingId).child('propietario').isString() && root.child('products').child($listingId).child('propietario').val() !== auth.uid && root.child('products').child($listingId).child('isActive').val() !== false",
+          ".validate": "newData.hasChildren(['authorName','rating','comment','createdAt','updatedAt'])",
+          "authorName": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 80"
+          },
+          "rating": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5 && newData.val() % 1 === 0"
+          },
+          "comment": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() === now)"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     }

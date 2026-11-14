@@ -6,9 +6,18 @@ import kotlinx.coroutines.flow.Flow
 interface ListingRepository {
     fun observeListings(): Flow<List<Listing>>
 
-    suspend fun saveListing(listing: Listing)
+    fun observeListingImage(listingId: String): Flow<String?>
 
-    suspend fun updateListing(listing: Listing)
+    suspend fun saveListing(
+        listing: Listing,
+        imageBase64: String? = null
+    )
+
+    suspend fun updateListing(
+        listing: Listing,
+        imageBase64: String? = null,
+        removeImage: Boolean = false
+    )
 
     suspend fun setListingActive(
         listingId: String,

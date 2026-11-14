@@ -131,6 +131,15 @@ fun EditListingRoute(
         onPriceChange = editViewModel::onPriceChange,
         onCategoryChange = editViewModel::onCategoryChange,
         onPublishClick = editViewModel::onPublishClick,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        imageContent = {
+            ListingImageEditor(
+                state = editState,
+                repository = repository,
+                onImageSelected = editViewModel::onImageSelected,
+                onRemoveImageClick = editViewModel::onRemoveImageClick,
+                initialListing = editableListing
+            )
+        }
     )
 }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.proyectoplataformasmoviles.data.repository.ProfileRepository
+import com.example.proyectoplataformasmoviles.data.repository.ReviewRepository
 import com.example.proyectoplataformasmoviles.domain.repository.ListingRepository
 import com.example.proyectoplataformasmoviles.local.DraftRepository
 import com.example.proyectoplataformasmoviles.presentation.MyProductsViewModel
@@ -28,6 +30,9 @@ import com.example.proyectoplataformasmoviles.screens.DetailScreen
 import com.example.proyectoplataformasmoviles.screens.EditListingRoute
 import com.example.proyectoplataformasmoviles.screens.GuestProfileScreen
 import com.example.proyectoplataformasmoviles.screens.HomeScreen
+import com.example.proyectoplataformasmoviles.screens.ListingImageEditor
+import com.example.proyectoplataformasmoviles.screens.ListingImageView
+import com.example.proyectoplataformasmoviles.screens.ListingReviews
 import com.example.proyectoplataformasmoviles.screens.ListingStatusControls
 import com.example.proyectoplataformasmoviles.screens.MyProductsScreen
 import com.example.proyectoplataformasmoviles.screens.OnboardingScreen
@@ -36,6 +41,7 @@ import com.example.proyectoplataformasmoviles.screens.PublishScreen
 import com.example.proyectoplataformasmoviles.screens.RegisterScreen
 import com.example.proyectoplataformasmoviles.screens.ServiceOrderScreen
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.example.proyectoplataformasmoviles.presentation.PublishViewModel as DraftPublishViewModel
 import com.example.proyectoplataformasmoviles.screens.ContactoConectado as ContactSummaryScreen
 import com.example.proyectoplataformasmoviles.screens.borradores.PublishScreen as DraftPublishScreen
@@ -88,6 +94,13 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
     val authentication = FirebaseAuth.getInstance()
+
+    val reviewRepository = remember(authentication) {
+        ReviewRepository(
+            database = FirebaseDatabase.getInstance(),
+            authentication = authentication
+        )
+    }
 
     val catalogState by homeViewModel.uiState
         .collectAsStateWithLifecycle()
@@ -171,7 +184,14 @@ fun AppNavigation(
                 onProfileClick = {
                     navController.navigate(Routes.PROFILE)
                 },
-                onRetryClick = homeViewModel::onRetryClick
+                onRetryClick = homeViewModel::onRetryClick,
+                listingImageContent = { listing, imageModifier ->
+                    ListingImageView(
+                        listing = listing,
+                        repository = listingRepository,
+                        modifier = imageModifier
+                    )
+                }
             )
         }
 
@@ -232,6 +252,21 @@ fun AppNavigation(
                             isUpdating = detailState.isUpdatingStatus,
                             errorMessage = detailState.statusErrorMessage,
                             onChangeStatus = detailViewModel::setListingActive
+                        )
+                    }
+                },
+                listingImageContent = { listing, imageModifier ->
+                    ListingImageView(
+                        listing = listing,
+                        repository = listingRepository,
+                        modifier = imageModifier
+                    )
+                },
+                reviewContent = {
+                    detailState.listing?.let { listing ->
+                        ListingReviews(
+                            listing = listing,
+                            repository = reviewRepository
                         )
                     }
                 }
@@ -370,6 +405,16 @@ fun AppNavigation(
                 onPublishClick = publishViewModel::onPublishClick,
                 onBackClick = {
                     navController.popBackStack()
+                },
+                imageContent = {
+                    ListingImageEditor(
+                        state = publishState,
+                        repository = listingRepository,
+                        onImageSelected =
+                            publishViewModel::onImageSelected,
+                        onRemoveImageClick =
+                            publishViewModel::onRemoveImageClick
+                    )
                 }
             )
         }

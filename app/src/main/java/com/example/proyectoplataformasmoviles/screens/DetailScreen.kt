@@ -63,7 +63,16 @@ fun DetailScreen(
     modifier: Modifier = Modifier,
     canEdit: Boolean = false,
     onEditClick: () -> Unit = {},
-    managementContent: @Composable () -> Unit = {}
+    managementContent: @Composable () -> Unit = {},
+    listingImageContent: @Composable (Listing, Modifier) -> Unit = { listing, imageModifier ->
+        AsyncImage(
+            model = listing.imageUrl,
+            contentDescription = listing.title,
+            modifier = imageModifier,
+            contentScale = ContentScale.Crop
+        )
+    },
+    reviewContent: @Composable () -> Unit = {}
 ) {
     val listing: Listing? = state.listing
 
@@ -366,18 +375,19 @@ fun DetailScreen(
                 }
 
                 else -> {
-                    if (listing.imageUrl.isNotBlank()) {
+                    if (
+                        listing.hasImage ||
+                        listing.imageUrl.isNotBlank()
+                    ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(210.dp)
                                 .background(UvgGreenLight)
                         ) {
-                            AsyncImage(
-                                model = listing.imageUrl,
-                                contentDescription = listing.title,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                            listingImageContent(
+                                listing,
+                                Modifier.fillMaxSize()
                             )
 
                             Surface(
@@ -685,6 +695,8 @@ fun DetailScreen(
                                 }
                             }
                         }
+
+                        reviewContent()
 
                         Spacer(
                             modifier = Modifier.height(

@@ -65,7 +65,8 @@ fun PublishScreen(
     onCategoryChange: (String) -> Unit,
     onPublishClick: () -> Unit,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    imageContent: @Composable () -> Unit = {}
 ) {
     var isCategoryMenuExpanded by remember {
         mutableStateOf(false)
@@ -79,7 +80,7 @@ fun PublishScreen(
         "Consultoría"
     )
 
-    val canEdit = !state.isSaving && !state.isPublished
+    val canEdit = state.canEditForm
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = UvgGreenPrimary,
@@ -88,7 +89,9 @@ fun PublishScreen(
         unfocusedContainerColor = UvgSurface
     )
 
-    BackHandler(enabled = state.isSaving) {}
+    BackHandler(
+        enabled = state.isSaving || state.isProcessingImage
+    ) {}
 
     Scaffold(
         containerColor = UvgBackground,
@@ -164,6 +167,8 @@ fun PublishScreen(
                     color = UvgTextSecondary
                 )
             }
+
+            imageContent()
 
             Column(
                 verticalArrangement = Arrangement.spacedBy(6.dp)

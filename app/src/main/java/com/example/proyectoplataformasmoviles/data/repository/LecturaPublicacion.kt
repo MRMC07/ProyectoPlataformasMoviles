@@ -17,7 +17,8 @@ fun leerPublicacion(identificador: String, campos: Map<String, Any>): Listing? {
         correoVendedor = campos["correoVendedor"] as? String ?: "",
         propietario = (campos["propietario"] ?: campos["ownerId"]) as? String ?: "",
         universidad = campos["universidad"] as? String ?: "Sin especificar",
-        isActive = campos["isActive"] as? Boolean ?: true
+        isActive = campos["isActive"] as? Boolean ?: true,
+        hasImage = campos["hasImage"] as? Boolean ?: false
     )
 }
 

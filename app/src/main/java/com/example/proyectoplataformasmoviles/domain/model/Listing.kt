@@ -1,5 +1,7 @@
 package com.example.proyectoplataformasmoviles.domain.model
 
+const val MAX_LISTING_IMAGE_LENGTH = 100_000
+
 data class Listing(
     val id: String,
     val title: String,
@@ -17,7 +19,8 @@ data class Listing(
     val propietario: String = "",
     val universidad: String = "",
     val includes: List<String> = emptyList(),
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val hasImage: Boolean = false
 )
 
 val defaultUvgListings: List<Listing> = listOf(
