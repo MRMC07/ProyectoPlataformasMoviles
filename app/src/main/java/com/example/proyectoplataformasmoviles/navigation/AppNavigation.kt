@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,18 +16,27 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.proyectoplataformasmoviles.data.repository.ProfileRepository
 import com.example.proyectoplataformasmoviles.domain.repository.ListingRepository
+import com.example.proyectoplataformasmoviles.local.DraftRepository
+import com.example.proyectoplataformasmoviles.presentation.MyProductsViewModel
 import com.example.proyectoplataformasmoviles.presentation.detail.DetailViewModel
 import com.example.proyectoplataformasmoviles.presentation.home.HomeViewModel
+import com.example.proyectoplataformasmoviles.presentation.profile.ProfileViewModel
 import com.example.proyectoplataformasmoviles.presentation.publish.PublishViewModel
-import com.example.proyectoplataformasmoviles.screens.ContactScreen
 import com.example.proyectoplataformasmoviles.screens.DetailScreen
+import com.example.proyectoplataformasmoviles.screens.GuestProfileScreen
 import com.example.proyectoplataformasmoviles.screens.HomeScreen
+import com.example.proyectoplataformasmoviles.screens.MyProductsScreen
 import com.example.proyectoplataformasmoviles.screens.OnboardingScreen
-import com.example.proyectoplataformasmoviles.screens.ProfileScreen
+import com.example.proyectoplataformasmoviles.screens.ProfileRoute
 import com.example.proyectoplataformasmoviles.screens.PublishScreen
 import com.example.proyectoplataformasmoviles.screens.RegisterScreen
 import com.example.proyectoplataformasmoviles.screens.ServiceOrderScreen
+import com.google.firebase.auth.FirebaseAuth
+import com.example.proyectoplataformasmoviles.presentation.PublishViewModel as DraftPublishViewModel
+import com.example.proyectoplataformasmoviles.screens.ContactoConectado as ContactSummaryScreen
+import com.example.proyectoplataformasmoviles.screens.borradores.PublishScreen as DraftPublishScreen
 
 object Routes {
     const val ONBOARDING = "onboarding"
@@ -35,11 +44,12 @@ object Routes {
     const val HOME = "home"
     const val PUBLISH = "publish"
     const val PROFILE = "profile"
-    const val BORRADORES = "borradores"
-    const val BORRADOR_NUEVO = "borrador_nuevo"
+    const val DRAFTS = "drafts"
+    const val NEW_DRAFT = "new_draft"
     const val DETAIL = "detail/{listingId}"
     const val ORDER = "order/{listingId}"
-    const val CONTACT = "contact/{listingId}?modality={modality}&note={note}&schedule={schedule}"
+    const val CONTACT =
+        "contact/{listingId}?modality={modality}&note={note}&schedule={schedule}"
 
     fun detail(listingId: String): String {
         return "detail/${Uri.encode(listingId)}"
@@ -55,7 +65,10 @@ object Routes {
         note: String = "",
         schedule: String = ""
     ): String {
-        return "contact/${Uri.encode(listingId)}?modality=${Uri.encode(modality)}&note=${Uri.encode(note)}&schedule=${Uri.encode(schedule)}"
+        return "contact/${Uri.encode(listingId)}" +
+                "?modality=${Uri.encode(modality)}" +
+                "&note=${Uri.encode(note)}" +
+                "&schedule=${Uri.encode(schedule)}"
     }
 }
 
@@ -63,20 +76,29 @@ object Routes {
 fun AppNavigation(
     homeViewModel: HomeViewModel,
     listingRepository: ListingRepository,
-    draftRepository: com.example.proyectoplataformasmoviles.local.DraftRepository
+    draftRepository: DraftRepository,
+    profileRepository: ProfileRepository
 ) {
     val navController = rememberNavController()
-    val catalogo by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val authentication = FirebaseAuth.getInstance()
 
-    // Estado de sesión en memoria para unificar todo el trayecto unilineal
-    var currentUserName by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.displayName ?: "Visitante") }
-    var currentUserRole by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("Estudiante") }
+    val catalogState by homeViewModel.uiState
+        .collectAsStateWithLifecycle()
+
+    var currentUserName by rememberSaveable {
+        mutableStateOf(
+            authentication.currentUser?.displayName ?: "Visitante"
+        )
+    }
+
+    var currentUserRole by rememberSaveable {
+        mutableStateOf("Estudiante")
+    }
 
     NavHost(
         navController = navController,
         startDestination = Routes.ONBOARDING
     ) {
-        // 1. Bienvenida a Nexora
         composable(Routes.ONBOARDING) {
             OnboardingScreen(
                 onStartRegistration = {
@@ -84,21 +106,25 @@ fun AppNavigation(
                 },
                 onExploreAsGuest = {
                     navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        popUpTo(Routes.ONBOARDING) {
+                            inclusive = true
+                        }
                     }
                 }
             )
         }
 
-        // 2. Creación de Usuario / Registro
         composable(Routes.REGISTER) {
             RegisterScreen(
                 onRegisterSuccess = { name, role ->
                     homeViewModel.onRetryClick()
                     currentUserName = name
                     currentUserRole = role
+
                     navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        popUpTo(Routes.ONBOARDING) {
+                            inclusive = true
+                        }
                     }
                 },
                 onBackClick = {
@@ -107,21 +133,27 @@ fun AppNavigation(
             )
         }
 
-        // 3. Catálogo de emprendimientos universitarios
         composable(Routes.HOME) {
-            val homeState by homeViewModel.uiState
-                .collectAsStateWithLifecycle()
-
             HomeScreen(
-                necesitaAcceso = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.isAnonymous != false,
-                state = homeState,
+                necesitaAcceso = authentication.currentUser
+                    ?.isAnonymous != false,
+                state = catalogState,
                 userName = currentUserName,
                 userRole = currentUserRole,
                 onListingClick = { listingId ->
-                    navController.navigate(Routes.detail(listingId))
+                    navController.navigate(
+                        Routes.detail(listingId)
+                    )
                 },
                 onPublishClick = {
-                    if (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.isAnonymous == false) navController.navigate(Routes.PUBLISH) else navController.navigate(Routes.REGISTER)
+                    if (
+                        authentication.currentUser
+                            ?.isAnonymous == false
+                    ) {
+                        navController.navigate(Routes.PUBLISH)
+                    } else {
+                        navController.navigate(Routes.REGISTER)
+                    }
                 },
                 onProfileClick = {
                     navController.navigate(Routes.PROFILE)
@@ -130,7 +162,6 @@ fun AppNavigation(
             )
         }
 
-        // 4. Detalle del Servicio
         composable(
             route = Routes.DETAIL,
             arguments = listOf(
@@ -163,13 +194,14 @@ fun AppNavigation(
                     navController.popBackStack()
                 },
                 onContactClick = {
-                    navController.navigate(Routes.order(listingId))
+                    navController.navigate(
+                        Routes.order(listingId)
+                    )
                 },
                 onRetryClick = detailViewModel::onRetryClick
             )
         }
 
-        // 5. Preparación de la consulta al emprendedor
         composable(
             route = Routes.ORDER,
             arguments = listOf(
@@ -183,7 +215,7 @@ fun AppNavigation(
                 .orEmpty()
 
             ServiceOrderScreen(
-                listings = catalogo.listings,
+                listings = catalogState.listings,
                 listingId = listingId,
                 onBackClick = {
                     navController.popBackStack()
@@ -201,7 +233,6 @@ fun AppNavigation(
             )
         }
 
-        // 6. Revisión de la consulta y contacto por correo
         composable(
             route = Routes.CONTACT,
             arguments = listOf(
@@ -225,23 +256,31 @@ fun AppNavigation(
             val listingId = backStackEntry.arguments
                 ?.getString("listingId")
                 .orEmpty()
+
             val modality = backStackEntry.arguments
                 ?.getString("modality")
                 .orEmpty()
+
             val note = backStackEntry.arguments
                 ?.getString("note")
                 .orEmpty()
+
             val schedule = backStackEntry.arguments
                 ?.getString("schedule")
                 .orEmpty()
 
-            com.example.proyectoplataformasmoviles.screens.ContactoConectado(
-                publicacion = catalogo.listings.firstOrNull { it.id == listingId },
-                alVolver = { navController.popBackStack() },
-                modalidad = modality, horario = schedule, nota = note
+            ContactSummaryScreen(
+                publicacion = catalogState.listings
+                    .firstOrNull { it.id == listingId },
+                alVolver = {
+                    navController.popBackStack()
+                },
+                modalidad = modality,
+                horario = schedule,
+                nota = note
             )
         }
-        // 7. Publicación de productos y servicios
+
         composable(Routes.PUBLISH) {
             val publishViewModel: PublishViewModel = viewModel(
                 factory = viewModelFactory {
@@ -265,9 +304,11 @@ fun AppNavigation(
             PublishScreen(
                 state = publishState,
                 onTitleChange = publishViewModel::onTitleChange,
-                onDescriptionChange = publishViewModel::onDescriptionChange,
+                onDescriptionChange =
+                    publishViewModel::onDescriptionChange,
                 onPriceChange = publishViewModel::onPriceChange,
-                onCategoryChange = publishViewModel::onCategoryChange,
+                onCategoryChange =
+                    publishViewModel::onCategoryChange,
                 onPublishClick = publishViewModel::onPublishClick,
                 onBackClick = {
                     navController.popBackStack()
@@ -275,62 +316,130 @@ fun AppNavigation(
             )
         }
 
-        composable(Routes.BORRADORES) {
-            val modelo: com.example.proyectoplataformasmoviles.presentation.MyProductsViewModel = viewModel(
-                factory = viewModelFactory { initializer {
-                    com.example.proyectoplataformasmoviles.presentation.MyProductsViewModel(draftRepository)
-                } }
-            )
-            val estado by modelo.uiState.collectAsStateWithLifecycle()
-            com.example.proyectoplataformasmoviles.screens.MyProductsScreen(
-                state = estado, onBackClick = { navController.popBackStack() },
-                onPublishClick = { navController.navigate(Routes.BORRADOR_NUEVO) },
-                onDeleteDraft = modelo::deleteDraft
-            )
-        }
-        composable(Routes.BORRADOR_NUEVO) {
-            val modelo: com.example.proyectoplataformasmoviles.presentation.PublishViewModel = viewModel(
-                factory = viewModelFactory { initializer {
-                    com.example.proyectoplataformasmoviles.presentation.PublishViewModel(draftRepository)
-                } }
-            )
-            val estado by modelo.uiState.collectAsStateWithLifecycle()
-            LaunchedEffect(estado.isSaved) {
-                if (estado.isSaved) navController.popBackStack()
-            }
-            com.example.proyectoplataformasmoviles.screens.borradores.PublishScreen(
-                state = estado, onTitleChange = modelo::onTitleChange,
-                onDescriptionChange = modelo::onDescriptionChange, onPriceChange = modelo::onPriceChange,
-                onCategoryChange = modelo::onCategoryChange, onPublishClick = modelo::onSubmitClick,
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-        // 8. Perfil de Usuario ("Perfil E." en el pizarrón)
-        composable(Routes.PROFILE) {
-            ProfileScreen(
-                userName = currentUserName,
-                userRole = currentUserRole,
-                alVerBorradores = { navController.navigate(Routes.BORRADORES) },
-                userListings = catalogo.listings.filter { it.propietario == com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid },
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onListingClick = { listingId ->
-                    navController.navigate(Routes.detail(listingId))
-                },
-                onPublishClick = {
-                    if (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.isAnonymous == false) navController.navigate(Routes.PUBLISH) else navController.navigate(Routes.REGISTER)
-                },
-                onLogoutClick = {
-                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                    homeViewModel.onRetryClick()
-                    currentUserName = "Visitante"
-                    currentUserRole = "Estudiante"
-                    navController.navigate(Routes.ONBOARDING) {
-                        popUpTo(0) { inclusive = true }
+        composable(Routes.DRAFTS) {
+            val draftsViewModel: MyProductsViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        MyProductsViewModel(draftRepository)
                     }
                 }
             )
+
+            val draftsState by draftsViewModel.uiState
+                .collectAsStateWithLifecycle()
+
+            MyProductsScreen(
+                state = draftsState,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onPublishClick = {
+                    navController.navigate(Routes.NEW_DRAFT)
+                },
+                onDeleteDraft = draftsViewModel::deleteDraft
+            )
+        }
+
+        composable(Routes.NEW_DRAFT) {
+            val draftViewModel: DraftPublishViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        DraftPublishViewModel(draftRepository)
+                    }
+                }
+            )
+
+            val draftState by draftViewModel.uiState
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(draftState.isSaved) {
+                if (draftState.isSaved) {
+                    navController.popBackStack()
+                }
+            }
+
+            DraftPublishScreen(
+                state = draftState,
+                onTitleChange = draftViewModel::onTitleChange,
+                onDescriptionChange =
+                    draftViewModel::onDescriptionChange,
+                onPriceChange = draftViewModel::onPriceChange,
+                onCategoryChange =
+                    draftViewModel::onCategoryChange,
+                onPublishClick = draftViewModel::onSubmitClick,
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Routes.PROFILE) {
+            val user = authentication.currentUser
+
+            if (user == null || user.isAnonymous) {
+                GuestProfileScreen(
+                    onSignInClick = {
+                        navController.navigate(Routes.REGISTER)
+                    },
+                    onDraftsClick = {
+                        navController.navigate(Routes.DRAFTS)
+                    },
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
+            } else {
+                val profileViewModel: ProfileViewModel = viewModel(
+                    key = user.uid,
+                    factory = viewModelFactory {
+                        initializer {
+                            ProfileViewModel(
+                                repository = profileRepository,
+                                userId = user.uid,
+                                initialName =
+                                    user.displayName.orEmpty()
+                            )
+                        }
+                    }
+                )
+
+                ProfileRoute(
+                    viewModel = profileViewModel,
+                    listings = catalogState.listings.filter {
+                        it.propietario == user.uid
+                    },
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
+                    onListingClick = { listingId ->
+                        navController.navigate(
+                            Routes.detail(listingId)
+                        )
+                    },
+                    onPublishClick = {
+                        navController.navigate(Routes.PUBLISH)
+                    },
+                    onLogoutClick = {
+                        authentication.signOut()
+                        homeViewModel.onRetryClick()
+
+                        currentUserName = "Visitante"
+                        currentUserRole = "Estudiante"
+
+                        navController.navigate(Routes.ONBOARDING) {
+                            popUpTo(0) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                    onDraftsClick = {
+                        navController.navigate(Routes.DRAFTS)
+                    },
+                    onNameChanged = { name ->
+                        currentUserName = name
+                    }
+                )
+            }
         }
     }
 }
