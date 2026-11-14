@@ -79,7 +79,8 @@ fun ProfileRoute(
     onPublishClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onDraftsClick: () -> Unit,
-    onNameChanged: (String) -> Unit
+    onNameChanged: (String) -> Unit,
+    onRequestsClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -111,10 +112,15 @@ fun ProfileRoute(
                     .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                TextButton(onClick = onRequestsClick) {
+                    Text("Mis solicitudes")
+                }
+
                 if (state.isLoading) {
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     Text("Cargando perfil…")
                 }
 

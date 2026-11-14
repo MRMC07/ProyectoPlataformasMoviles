@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.proyectoplataformasmoviles.data.repository.ProfileRepository
+import com.example.proyectoplataformasmoviles.data.repository.RequestRepository
 import com.example.proyectoplataformasmoviles.data.repository.ReviewRepository
 import com.example.proyectoplataformasmoviles.domain.repository.ListingRepository
 import com.example.proyectoplataformasmoviles.local.DraftRepository
@@ -35,11 +36,12 @@ import com.example.proyectoplataformasmoviles.screens.ListingImageView
 import com.example.proyectoplataformasmoviles.screens.ListingReviews
 import com.example.proyectoplataformasmoviles.screens.ListingStatusControls
 import com.example.proyectoplataformasmoviles.screens.MyProductsScreen
+import com.example.proyectoplataformasmoviles.screens.NewRequestRoute
 import com.example.proyectoplataformasmoviles.screens.OnboardingScreen
 import com.example.proyectoplataformasmoviles.screens.ProfileRoute
 import com.example.proyectoplataformasmoviles.screens.PublishScreen
 import com.example.proyectoplataformasmoviles.screens.RegisterScreen
-import com.example.proyectoplataformasmoviles.screens.ServiceOrderScreen
+import com.example.proyectoplataformasmoviles.screens.RequestsRoute
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.example.proyectoplataformasmoviles.presentation.PublishViewModel as DraftPublishViewModel
@@ -54,6 +56,7 @@ object Routes {
     const val PROFILE = "profile"
     const val DRAFTS = "drafts"
     const val NEW_DRAFT = "new_draft"
+    const val REQUESTS = "requests"
     const val DETAIL = "detail/{listingId}"
     const val EDIT = "edit/{listingId}"
     const val ORDER = "order/{listingId}"
@@ -97,6 +100,13 @@ fun AppNavigation(
 
     val reviewRepository = remember(authentication) {
         ReviewRepository(
+            database = FirebaseDatabase.getInstance(),
+            authentication = authentication
+        )
+    }
+
+    val requestRepository = remember(authentication) {
+        RequestRepository(
             database = FirebaseDatabase.getInstance(),
             authentication = authentication
         )
@@ -294,6 +304,18 @@ fun AppNavigation(
             )
         }
 
+        composable(Routes.REQUESTS) {
+            RequestsRoute(
+                repository = requestRepository,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onSignInClick = {
+                    navController.navigate(Routes.REGISTER)
+                }
+            )
+        }
+
         composable(
             route = Routes.ORDER,
             arguments = listOf(
@@ -306,21 +328,27 @@ fun AppNavigation(
                 ?.getString("listingId")
                 .orEmpty()
 
-            ServiceOrderScreen(
-                listings = activeListings,
-                listingId = listingId,
+            NewRequestRoute(
+                listing = activeListings.firstOrNull {
+                    it.id == listingId
+                },
+                repository = requestRepository,
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onProceedToChat = { modality, note, schedule ->
-                    navController.navigate(
-                        Routes.contact(
-                            listingId = listingId,
-                            modality = modality,
-                            note = note,
-                            schedule = schedule
-                        )
-                    )
+                onSent = {
+                    navController.navigate(Routes.REQUESTS) {
+                        popUpTo(Routes.ORDER) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                onRequestsClick = {
+                    navController.navigate(Routes.REQUESTS)
+                },
+                onSignInClick = {
+                    navController.navigate(Routes.REGISTER)
                 }
             )
         }
@@ -540,6 +568,9 @@ fun AppNavigation(
                     },
                     onNameChanged = { name ->
                         currentUserName = name
+                    },
+                    onRequestsClick = {
+                        navController.navigate(Routes.REQUESTS)
                     }
                 )
             }
