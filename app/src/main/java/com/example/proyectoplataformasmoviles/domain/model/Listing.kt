@@ -16,7 +16,8 @@ data class Listing(
     val correoVendedor: String = "",
     val propietario: String = "",
     val universidad: String = "",
-    val includes: List<String> = emptyList()
+    val includes: List<String> = emptyList(),
+    val isActive: Boolean = true
 )
 
 val defaultUvgListings: List<Listing> = listOf(

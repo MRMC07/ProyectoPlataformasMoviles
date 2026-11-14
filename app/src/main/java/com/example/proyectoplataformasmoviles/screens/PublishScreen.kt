@@ -1,7 +1,7 @@
 package com.example.proyectoplataformasmoviles.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,19 +81,30 @@ fun PublishScreen(
 
     val canEdit = !state.isSaving && !state.isPublished
 
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = UvgGreenPrimary,
+        unfocusedBorderColor = UvgBorder,
+        focusedContainerColor = UvgSurface,
+        unfocusedContainerColor = UvgSurface
+    )
+
+    BackHandler(enabled = state.isSaving) {}
+
     Scaffold(
         containerColor = UvgBackground,
         modifier = modifier
-    ) { innerPadding ->
+    ) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(contentPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(
+                    horizontal = 20.dp,
+                    vertical = 16.dp
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Navegación Superior
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -101,9 +112,15 @@ fun PublishScreen(
             ) {
                 TextButton(
                     onClick = onBackClick,
-                    colors = ButtonDefaults.textButtonColors(contentColor = UvgGreenPrimary)
+                    enabled = canEdit,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = UvgGreenPrimary
+                    )
                 ) {
-                    Text("← Regresar", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "← Regresar",
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Surface(
@@ -112,127 +129,161 @@ fun PublishScreen(
                 ) {
                     Text(
                         text = "Emprendé en Nexora",
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        ),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = UvgGoldDark,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        color = UvgGoldDark
                     )
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
-                    text = "Publicar nuevo servicio",
+                    text = if (state.isEditing) {
+                        "Editar publicación"
+                    } else {
+                        "Publicar nuevo servicio"
+                    },
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = UvgGreenDark
                 )
+
                 Text(
-                    text = "Ofrecé tus productos y servicios a estudiantes de todas las universidades de Guatemala.",
+                    text = if (state.isEditing) {
+                        "Actualizá la información de tu publicación."
+                    } else {
+                        "Ofrecé tus productos y servicios a estudiantes de todas las universidades de Guatemala."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = UvgTextSecondary
                 )
             }
 
-            // Título del Servicio
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
                     text = "Título de tu servicio o producto",
                     style = MaterialTheme.typography.labelLarge,
                     color = UvgTextPrimary
                 )
+
                 OutlinedTextField(
                     value = state.title,
                     onValueChange = onTitleChange,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = canEdit,
                     placeholder = {
-                        Text("Ej. Tutoría de Álgebra Lineal y Cálculo II", color = UvgTextMuted)
+                        Text(
+                            text = "Ej. Tutoría de Álgebra Lineal y Cálculo II",
+                            color = UvgTextMuted
+                        )
                     },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    isError = state.titleTouched && state.titleError != null,
+                    isError = state.titleTouched &&
+                            state.titleError != null,
                     supportingText = {
                         if (state.titleTouched) {
-                            state.titleError?.let { Text(it) }
+                            state.titleError?.let { message ->
+                                Text(message)
+                            }
                         }
                     },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = UvgGreenPrimary,
-                        unfocusedBorderColor = UvgBorder,
-                        focusedContainerColor = UvgSurface,
-                        unfocusedContainerColor = UvgSurface
-                    )
+                    colors = fieldColors
                 )
             }
 
-            // Descripción Detallada
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
                     text = "Descripción del servicio",
                     style = MaterialTheme.typography.labelLarge,
                     color = UvgTextPrimary
                 )
+
                 OutlinedTextField(
                     value = state.description,
                     onValueChange = onDescriptionChange,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = canEdit,
                     placeholder = {
-                        Text("Explica qué incluye, metodología o temas que cubres...", color = UvgTextMuted)
+                        Text(
+                            text = "Explicá qué incluye, la metodología o los temas que cubrís...",
+                            color = UvgTextMuted
+                        )
                     },
                     minLines = 3,
                     maxLines = 6,
                     shape = RoundedCornerShape(12.dp),
-                    isError = state.descriptionTouched && state.descriptionError != null,
+                    isError = state.descriptionTouched &&
+                            state.descriptionError != null,
                     supportingText = {
                         if (state.descriptionTouched) {
-                            state.descriptionError?.let { Text(it) }
+                            state.descriptionError?.let { message ->
+                                Text(message)
+                            }
                         }
                     },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = UvgGreenPrimary,
-                        unfocusedBorderColor = UvgBorder,
-                        focusedContainerColor = UvgSurface,
-                        unfocusedContainerColor = UvgSurface
-                    )
+                    colors = fieldColors
                 )
             }
 
-            // Precio en Quetzales
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
-                    text = "Precio en Quetzales (Q)",
+                    text = "Precio en quetzales (Q)",
                     style = MaterialTheme.typography.labelLarge,
                     color = UvgTextPrimary
                 )
+
                 OutlinedTextField(
                     value = state.price,
                     onValueChange = onPriceChange,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = canEdit,
-                    prefix = { Text("Q ", fontWeight = FontWeight.Bold, color = UvgGreenDark) },
-                    placeholder = { Text("75.00", color = UvgTextMuted) },
+                    prefix = {
+                        Text(
+                            text = "Q ",
+                            fontWeight = FontWeight.Bold,
+                            color = UvgGreenDark
+                        )
+                    },
+                    placeholder = {
+                        Text(
+                            text = "75.00",
+                            color = UvgTextMuted
+                        )
+                    },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal
+                    ),
                     shape = RoundedCornerShape(12.dp),
-                    isError = state.priceTouched && state.priceError != null,
+                    isError = state.priceTouched &&
+                            state.priceError != null,
                     supportingText = {
                         if (state.priceTouched) {
-                            state.priceError?.let { Text(it) }
+                            state.priceError?.let { message ->
+                                Text(message)
+                            }
                         }
                     },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = UvgGreenPrimary,
-                        unfocusedBorderColor = UvgBorder,
-                        focusedContainerColor = UvgSurface,
-                        unfocusedContainerColor = UvgSurface
-                    )
+                    colors = fieldColors
                 )
             }
 
-            // Categoría
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
                     text = "Categoría de servicio",
                     style = MaterialTheme.typography.labelLarge,
@@ -243,32 +294,61 @@ fun PublishScreen(
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(enabled = canEdit) { isCategoryMenuExpanded = true },
+                            .clickable(enabled = canEdit) {
+                                isCategoryMenuExpanded = true
+                            },
                         color = UvgSurface,
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, UvgBorder)
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = UvgBorder
+                        )
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            modifier = Modifier.padding(
+                                horizontal = 16.dp,
+                                vertical = 14.dp
+                            ),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = state.category.ifBlank { "Selecciona una categoría..." },
-                                color = if (state.category.isNotBlank()) UvgTextPrimary else UvgTextMuted,
+                                text = state.category.ifBlank {
+                                    "Seleccioná una categoría..."
+                                },
+                                modifier = Modifier.weight(1f),
+                                color = if (
+                                    state.category.isNotBlank()
+                                ) {
+                                    UvgTextPrimary
+                                } else {
+                                    UvgTextMuted
+                                },
                                 fontSize = 14.sp
                             )
-                            Text("▼", fontSize = 12.sp, color = UvgGreenPrimary)
+
+                            Text(
+                                text = "▼",
+                                fontSize = 12.sp,
+                                color = UvgGreenPrimary
+                            )
                         }
                     }
 
                     DropdownMenu(
-                        expanded = isCategoryMenuExpanded,
-                        onDismissRequest = { isCategoryMenuExpanded = false }
+                        expanded = isCategoryMenuExpanded && canEdit,
+                        onDismissRequest = {
+                            isCategoryMenuExpanded = false
+                        }
                     ) {
                         categories.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(category, fontWeight = FontWeight.Medium) },
+                                text = {
+                                    Text(
+                                        text = category,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
                                 onClick = {
                                     onCategoryChange(category)
                                     isCategoryMenuExpanded = false
@@ -289,19 +369,28 @@ fun PublishScreen(
                 }
             }
 
-            // Aviso para la comunidad universitaria
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = UvgGreenLight,
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, UvgGreenBorder)
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = UvgGreenBorder
+                )
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("💡", fontSize = 18.sp)
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "💡",
+                        fontSize = 18.sp
+                    )
+
+                    Spacer(
+                        modifier = Modifier.width(10.dp)
+                    )
+
                     Text(
                         text = "Tu publicación será visible para la comunidad de Nexora. Acordá con la otra persona un lugar de entrega o una modalidad virtual.",
                         style = MaterialTheme.typography.bodySmall,
@@ -311,9 +400,9 @@ fun PublishScreen(
                 }
             }
 
-            if (state.errorMessage != null) {
+            state.errorMessage?.let { message ->
                 Text(
-                    text = state.errorMessage,
+                    text = message,
                     color = MaterialTheme.colorScheme.error,
                     fontSize = 12.sp
                 )
@@ -321,15 +410,24 @@ fun PublishScreen(
 
             if (state.isSaving) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        8.dp
+                    ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator(color = UvgGreenPrimary, modifier = Modifier.size(20.dp))
-                    Text("Guardando publicación en Nexora...", fontSize = 13.sp, color = UvgTextSecondary)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = UvgGreenPrimary
+                    )
+
+                    Text(
+                        text = "Guardando publicación en Nexora...",
+                        fontSize = 13.sp,
+                        color = UvgTextSecondary
+                    )
                 }
             }
 
-            // Botón de Publicar
             Button(
                 onClick = onPublishClick,
                 enabled = state.canPublish,
@@ -338,19 +436,27 @@ fun PublishScreen(
                     .height(52.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = UvgGreenPrimary,
-                    disabledContainerColor = UvgGreenPrimary.copy(alpha = 0.35f),
+                    disabledContainerColor = UvgGreenPrimary.copy(
+                        alpha = 0.35f
+                    ),
                     contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Text(
-                    text = if (state.isSaving) "Publicando..." else "Publicar en Nexora",
+                    text = when {
+                        state.isSaving -> "Guardando..."
+                        state.isEditing -> "Guardar cambios"
+                        else -> "Publicar en Nexora"
+                    },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
         }
     }
 }

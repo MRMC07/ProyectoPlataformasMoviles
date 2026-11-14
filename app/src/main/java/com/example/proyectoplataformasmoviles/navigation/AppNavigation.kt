@@ -25,8 +25,10 @@ import com.example.proyectoplataformasmoviles.presentation.home.HomeViewModel
 import com.example.proyectoplataformasmoviles.presentation.profile.ProfileViewModel
 import com.example.proyectoplataformasmoviles.presentation.publish.PublishViewModel
 import com.example.proyectoplataformasmoviles.screens.DetailScreen
+import com.example.proyectoplataformasmoviles.screens.EditListingRoute
 import com.example.proyectoplataformasmoviles.screens.GuestProfileScreen
 import com.example.proyectoplataformasmoviles.screens.HomeScreen
+import com.example.proyectoplataformasmoviles.screens.ListingStatusControls
 import com.example.proyectoplataformasmoviles.screens.MyProductsScreen
 import com.example.proyectoplataformasmoviles.screens.OnboardingScreen
 import com.example.proyectoplataformasmoviles.screens.ProfileRoute
@@ -47,12 +49,17 @@ object Routes {
     const val DRAFTS = "drafts"
     const val NEW_DRAFT = "new_draft"
     const val DETAIL = "detail/{listingId}"
+    const val EDIT = "edit/{listingId}"
     const val ORDER = "order/{listingId}"
     const val CONTACT =
         "contact/{listingId}?modality={modality}&note={note}&schedule={schedule}"
 
     fun detail(listingId: String): String {
         return "detail/${Uri.encode(listingId)}"
+    }
+
+    fun edit(listingId: String): String {
+        return "edit/${Uri.encode(listingId)}"
     }
 
     fun order(listingId: String): String {
@@ -84,6 +91,10 @@ fun AppNavigation(
 
     val catalogState by homeViewModel.uiState
         .collectAsStateWithLifecycle()
+
+    val activeListings = catalogState.listings.filter {
+        it.isActive
+    }
 
     var currentUserName by rememberSaveable {
         mutableStateOf(
@@ -137,7 +148,9 @@ fun AppNavigation(
             HomeScreen(
                 necesitaAcceso = authentication.currentUser
                     ?.isAnonymous != false,
-                state = catalogState,
+                state = catalogState.copy(
+                    listings = activeListings
+                ),
                 userName = currentUserName,
                 userRole = currentUserRole,
                 onListingClick = { listingId ->
@@ -188,6 +201,12 @@ fun AppNavigation(
             val detailState by detailViewModel.uiState
                 .collectAsStateWithLifecycle()
 
+            val currentUser = authentication.currentUser
+
+            val isOwner = currentUser != null &&
+                    !currentUser.isAnonymous &&
+                    detailState.listing?.propietario == currentUser.uid
+
             DetailScreen(
                 state = detailState,
                 onBackClick = {
@@ -198,7 +217,45 @@ fun AppNavigation(
                         Routes.order(listingId)
                     )
                 },
-                onRetryClick = detailViewModel::onRetryClick
+                onRetryClick = detailViewModel::onRetryClick,
+                canEdit = isOwner,
+                onEditClick = {
+                    navController.navigate(
+                        Routes.edit(listingId)
+                    )
+                },
+                managementContent = {
+                    detailState.listing?.let { listing ->
+                        ListingStatusControls(
+                            listing = listing,
+                            canManage = isOwner,
+                            isUpdating = detailState.isUpdatingStatus,
+                            errorMessage = detailState.statusErrorMessage,
+                            onChangeStatus = detailViewModel::setListingActive
+                        )
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Routes.EDIT,
+            arguments = listOf(
+                navArgument("listingId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val listingId = backStackEntry.arguments
+                ?.getString("listingId")
+                .orEmpty()
+
+            EditListingRoute(
+                listingId = listingId,
+                repository = listingRepository,
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -215,7 +272,7 @@ fun AppNavigation(
                 .orEmpty()
 
             ServiceOrderScreen(
-                listings = catalogState.listings,
+                listings = activeListings,
                 listingId = listingId,
                 onBackClick = {
                     navController.popBackStack()
@@ -270,8 +327,9 @@ fun AppNavigation(
                 .orEmpty()
 
             ContactSummaryScreen(
-                publicacion = catalogState.listings
-                    .firstOrNull { it.id == listingId },
+                publicacion = activeListings.firstOrNull {
+                    it.id == listingId
+                },
                 alVolver = {
                     navController.popBackStack()
                 },

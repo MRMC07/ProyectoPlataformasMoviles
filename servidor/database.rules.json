@@ -7,18 +7,67 @@
       "$identificador": {
         ".write": "auth != null && newData.exists() && (!data.exists() || data.child('propietario').val() === auth.uid) && newData.child('propietario').val() === auth.uid && newData.child('correoVendedor').val() === auth.token.email",
         ".validate": "newData.hasChildren(['id','nombre','descripcion','precio','precioCentavos','categoria','nombreVendedor','correoVendedor','propietario','creadaEn'])",
-        "id": { ".validate": "newData.val() === $identificador" },
-        "nombre": { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 80" },
-        "descripcion": { ".validate": "newData.isString() && newData.val().length >= 10 && newData.val().length <= 1500" },
-        "precioCentavos": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 99999999 && newData.val() % 1 === 0" },
-        "precio": { ".validate": "newData.isNumber() && newData.val() === newData.parent().child('precioCentavos').val() / 100" },
-        "categoria": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
-        "nombreVendedor": { ".validate": "newData.isString() && newData.val().length <= 200" },
-        "correoVendedor": { ".validate": "newData.val() === auth.token.email" },
-        "propietario": { ".validate": "newData.val() === auth.uid" },
-        "creadaEn": { ".validate": "newData.isNumber() && newData.val() === now" },
-        "imageUrl": { ".validate": "newData.isString() && newData.val().length <= 2048" },
-        "$otro": { ".validate": false }
+        "id": {
+          ".validate": "newData.val() === $identificador"
+        },
+        "nombre": {
+          ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 80"
+        },
+        "descripcion": {
+          ".validate": "newData.isString() && newData.val().length >= 10 && newData.val().length <= 1500"
+        },
+        "precioCentavos": {
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 99999999 && newData.val() % 1 === 0"
+        },
+        "precio": {
+          ".validate": "newData.isNumber() && newData.val() === newData.parent().child('precioCentavos').val() / 100"
+        },
+        "categoria": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "nombreVendedor": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "correoVendedor": {
+          ".validate": "newData.val() === auth.token.email"
+        },
+        "propietario": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "creadaEn": {
+          ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() === now)"
+        },
+        "imageUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 2048"
+        },
+        "$otro": {
+          ".validate": false
+        }
+      }
+    },
+    "perfiles": {
+      "$userId": {
+        ".read": "auth != null && auth.uid === $userId && auth.token.email != null",
+        ".write": "auth != null && auth.uid === $userId && auth.token.email != null && newData.exists()",
+        ".validate": "newData.hasChildren(['nombre','universidad','descripcion','fotoBase64','actualizadoEn'])",
+        "nombre": {
+          ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 80"
+        },
+        "universidad": {
+          ".validate": "newData.isString() && newData.val().length <= 120"
+        },
+        "descripcion": {
+          ".validate": "newData.isString() && newData.val().length <= 300"
+        },
+        "fotoBase64": {
+          ".validate": "newData.isString() && newData.val().length <= 32768"
+        },
+        "actualizadoEn": {
+          ".validate": "newData.isNumber() && newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }

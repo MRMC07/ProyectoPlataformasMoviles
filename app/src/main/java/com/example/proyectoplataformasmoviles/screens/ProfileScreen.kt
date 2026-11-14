@@ -288,14 +288,18 @@ fun ProfileScreen(
                     ProfileTabPill(
                         title = "Mis publicaciones (${userListings.size})",
                         isSelected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
+                        onClick = {
+                            selectedTab = 0
+                        },
                         modifier = Modifier.weight(1f)
                     )
 
                     ProfileTabPill(
                         title = "Reseñas",
                         isSelected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
+                        onClick = {
+                            selectedTab = 1
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -308,7 +312,7 @@ fun ProfileScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Sin publicaciones activas",
+                                text = "Sin publicaciones",
                                 fontWeight = FontWeight.Bold,
                                 color = UvgTextPrimary,
                                 textAlign = TextAlign.Center
@@ -403,6 +407,21 @@ fun ProfileScreen(
                                         text = "${listing.category} · ${listing.deliveryMode}",
                                         fontSize = 11.sp,
                                         color = UvgTextSecondary
+                                    )
+
+                                    Text(
+                                        text = if (listing.isActive) {
+                                            "Activa"
+                                        } else {
+                                            "Retirada"
+                                        },
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (listing.isActive) {
+                                            UvgGreenDark
+                                        } else {
+                                            UvgTextSecondary
+                                        }
                                     )
                                 }
 
@@ -545,7 +564,9 @@ private fun ProfileTabPill(
         } else {
             UvgSurface
         },
-        shape = RoundedCornerShape(Spacing.CornerMedium),
+        shape = RoundedCornerShape(
+            Spacing.CornerMedium
+        ),
         border = BorderStroke(
             width = 1.dp,
             color = if (isSelected) {

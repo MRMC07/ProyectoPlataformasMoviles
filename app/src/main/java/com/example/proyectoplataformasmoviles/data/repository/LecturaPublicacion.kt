@@ -16,7 +16,8 @@ fun leerPublicacion(identificador: String, campos: Map<String, Any>): Listing? {
         deliveryMode = "A convenir", turnaroundTime = "A convenir", includes = emptyList(),
         correoVendedor = campos["correoVendedor"] as? String ?: "",
         propietario = (campos["propietario"] ?: campos["ownerId"]) as? String ?: "",
-        universidad = campos["universidad"] as? String ?: "Sin especificar"
+        universidad = campos["universidad"] as? String ?: "Sin especificar",
+        isActive = campos["isActive"] as? Boolean ?: true
     )
 }
 

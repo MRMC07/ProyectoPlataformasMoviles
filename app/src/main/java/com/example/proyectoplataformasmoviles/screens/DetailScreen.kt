@@ -60,7 +60,10 @@ fun DetailScreen(
     onBackClick: () -> Unit,
     onContactClick: () -> Unit,
     onRetryClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    canEdit: Boolean = false,
+    onEditClick: () -> Unit = {},
+    managementContent: @Composable () -> Unit = {}
 ) {
     val listing: Listing? = state.listing
 
@@ -68,7 +71,12 @@ fun DetailScreen(
         containerColor = UvgBackground,
         modifier = modifier,
         bottomBar = {
-            if (listing != null && !state.isLoading && state.errorMessage == null) {
+            if (
+                listing != null &&
+                !state.isLoading &&
+                state.errorMessage == null &&
+                (canEdit || listing.isActive)
+            ) {
                 Surface(
                     color = UvgSurface,
                     border = BorderStroke(1.dp, UvgBorder),
@@ -77,7 +85,10 @@ fun DetailScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Spacing.Large, vertical = 14.dp),
+                            .padding(
+                                horizontal = Spacing.Large,
+                                vertical = 14.dp
+                            ),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -87,21 +98,39 @@ fun DetailScreen(
                                 fontSize = 11.sp,
                                 color = UvgTextSecondary
                             )
-                            Row(verticalAlignment = Alignment.Bottom) {
+
+                            Row(
+                                verticalAlignment = Alignment.Bottom
+                            ) {
                                 Text(
                                     text = "Q",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = UvgGreenDark
                                 )
+
                                 Text(
-                                    text = String.format(Locale.US, "%.2f", listing.price),
+                                    text = String.format(
+                                        Locale.US,
+                                        "%.2f",
+                                        listing.price
+                                    ),
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = UvgGreenDark
                                 )
+
                                 Text(
-                                    text = if (listing.category.equals("Tutorías", ignoreCase = true)) " / hora" else "",
+                                    text = if (
+                                        listing.category.equals(
+                                            "Tutorías",
+                                            ignoreCase = true
+                                        )
+                                    ) {
+                                        " / hora"
+                                    } else {
+                                        ""
+                                    },
                                     fontSize = 12.sp,
                                     color = UvgTextSecondary
                                 )
@@ -109,16 +138,28 @@ fun DetailScreen(
                         }
 
                         Button(
-                            onClick = onContactClick,
-                            modifier = Modifier.height(Spacing.MinTouchTarget),
+                            onClick = if (canEdit) {
+                                onEditClick
+                            } else {
+                                onContactClick
+                            },
+                            modifier = Modifier.height(
+                                Spacing.MinTouchTarget
+                            ),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = UvgGreenPrimary,
                                 contentColor = Color.White
                             ),
-                            shape = RoundedCornerShape(Spacing.CornerMedium)
+                            shape = RoundedCornerShape(
+                                Spacing.CornerMedium
+                            )
                         ) {
                             Text(
-                                text = "Pedir información →",
+                                text = if (canEdit) {
+                                    "Editar publicación"
+                                } else {
+                                    "Pedir información →"
+                                },
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -127,14 +168,13 @@ fun DetailScreen(
                 }
             }
         }
-    ) { innerPadding ->
+    ) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(contentPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 1. Barra de Navegación Superior
             Surface(
                 color = UvgSurface,
                 border = BorderStroke(1.dp, UvgBorder),
@@ -143,15 +183,23 @@ fun DetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = Spacing.Medium, vertical = 10.dp),
+                        .padding(
+                            horizontal = Spacing.Medium,
+                            vertical = 10.dp
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     TextButton(
                         onClick = onBackClick,
-                        colors = ButtonDefaults.textButtonColors(contentColor = UvgGreenPrimary)
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = UvgGreenPrimary
+                        )
                     ) {
-                        Text("← Volver al catálogo", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "← Volver al catálogo",
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
 
                     Surface(
@@ -159,17 +207,27 @@ fun DetailScreen(
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Text(
-                            text = "Detalle del Servicio",
+                            text = "Detalle del servicio",
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.Small,
+                                vertical = 4.dp
+                            ),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = UvgGreenDark,
-                            modifier = Modifier.padding(horizontal = Spacing.Small, vertical = 4.dp)
+                            color = UvgGreenDark
                         )
                     }
                 }
             }
 
-            // 2. Estados de Carga, Error o Publicación No Disponible (Sin sustituciones ficticias)
+            if (
+                !state.isLoading &&
+                state.errorMessage == null &&
+                listing != null
+            ) {
+                managementContent()
+            }
+
             when {
                 state.isLoading -> {
                     Box(
@@ -180,9 +238,14 @@ fun DetailScreen(
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                            verticalArrangement = Arrangement.spacedBy(
+                                Spacing.Medium
+                            )
                         ) {
-                            CircularProgressIndicator(color = UvgGreenPrimary)
+                            CircularProgressIndicator(
+                                color = UvgGreenPrimary
+                            )
+
                             Text(
                                 text = "Cargando publicación...",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -198,27 +261,43 @@ fun DetailScreen(
                             .fillMaxWidth()
                             .padding(Spacing.Large),
                         color = UvgSurface,
-                        shape = RoundedCornerShape(Spacing.CornerLarge),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                        shape = RoundedCornerShape(
+                            Spacing.CornerLarge
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.error
+                        )
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(Spacing.Large),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                            verticalArrangement = Arrangement.spacedBy(
+                                Spacing.Medium
+                            )
                         ) {
-                            Text("⚠️", fontSize = 32.sp)
+                            Text(
+                                text = "⚠️",
+                                fontSize = 32.sp
+                            )
+
                             Text(
                                 text = state.errorMessage,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.Medium
                             )
+
                             Button(
                                 onClick = onRetryClick,
-                                colors = ButtonDefaults.buttonColors(containerColor = UvgGreenPrimary),
-                                shape = RoundedCornerShape(Spacing.CornerMedium)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = UvgGreenPrimary
+                                ),
+                                shape = RoundedCornerShape(
+                                    Spacing.CornerMedium
+                                )
                             ) {
                                 Text("Reintentar")
                             }
@@ -227,13 +306,14 @@ fun DetailScreen(
                 }
 
                 listing == null -> {
-                    // Manejo explícito sin falsear datos con defaultUvgListings.first()
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(Spacing.Large),
                         color = UvgSurface,
-                        shape = RoundedCornerShape(Spacing.CornerLarge),
+                        shape = RoundedCornerShape(
+                            Spacing.CornerLarge
+                        ),
                         border = BorderStroke(1.dp, UvgBorder)
                     ) {
                         Column(
@@ -241,26 +321,43 @@ fun DetailScreen(
                                 .fillMaxWidth()
                                 .padding(Spacing.Huge),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(Spacing.Medium)
+                            verticalArrangement = Arrangement.spacedBy(
+                                Spacing.Medium
+                            )
                         ) {
-                            Text("🔍", fontSize = 36.sp)
+                            Text(
+                                text = "🔍",
+                                fontSize = 36.sp
+                            )
+
                             Text(
                                 text = "Publicación no disponible",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = UvgTextPrimary
                             )
+
                             Text(
-                                text = "El servicio solicitado no se encuentra en el repositorio o fue retirado por el emprendedor.",
+                                text = "No se pudo encontrar la publicación solicitada.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = UvgTextSecondary,
                                 lineHeight = 18.sp
                             )
-                            Spacer(modifier = Modifier.height(Spacing.Small))
+
+                            Spacer(
+                                modifier = Modifier.height(
+                                    Spacing.Small
+                                )
+                            )
+
                             Button(
                                 onClick = onBackClick,
-                                colors = ButtonDefaults.buttonColors(containerColor = UvgGreenPrimary),
-                                shape = RoundedCornerShape(Spacing.CornerMedium)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = UvgGreenPrimary
+                                ),
+                                shape = RoundedCornerShape(
+                                    Spacing.CornerMedium
+                                )
                             ) {
                                 Text("Volver a explorar servicios")
                             }
@@ -269,7 +366,6 @@ fun DetailScreen(
                 }
 
                 else -> {
-                    // Renderizado de publicación real
                     if (listing.imageUrl.isNotBlank()) {
                         Box(
                             modifier = Modifier
@@ -285,18 +381,25 @@ fun DetailScreen(
                             )
 
                             Surface(
-                                color = UvgGreenDark.copy(alpha = 0.85f),
-                                shape = RoundedCornerShape(Spacing.CornerSmall),
+                                color = UvgGreenDark.copy(
+                                    alpha = 0.85f
+                                ),
+                                shape = RoundedCornerShape(
+                                    Spacing.CornerSmall
+                                ),
                                 modifier = Modifier
                                     .align(Alignment.BottomStart)
                                     .padding(Spacing.Medium)
                             ) {
                                 Text(
                                     text = "Categoría: ${listing.category}",
+                                    modifier = Modifier.padding(
+                                        horizontal = 10.dp,
+                                        vertical = 4.dp
+                                    ),
                                     color = Color.White,
                                     fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
                         }
@@ -306,10 +409,15 @@ fun DetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(Spacing.Large),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.Large)
+                        verticalArrangement = Arrangement.spacedBy(
+                            Spacing.Large
+                        )
                     ) {
-                        // Título y Calificación
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(
+                                Spacing.Small
+                            )
+                        ) {
                             Text(
                                 text = listing.title,
                                 style = MaterialTheme.typography.headlineSmall,
@@ -320,25 +428,48 @@ fun DetailScreen(
 
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.Small)
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    Spacing.Small
+                                )
                             ) {
                                 Surface(
                                     color = UvgGoldLight,
-                                    shape = RoundedCornerShape(Spacing.CornerSmall),
-                                    border = BorderStroke(1.dp, UvgGoldDark.copy(alpha = 0.2f))
+                                    shape = RoundedCornerShape(
+                                        Spacing.CornerSmall
+                                    ),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        UvgGoldDark.copy(alpha = 0.2f)
+                                    )
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = Spacing.Small, vertical = 4.dp),
+                                        modifier = Modifier.padding(
+                                            horizontal = Spacing.Small,
+                                            vertical = 4.dp
+                                        ),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("★", color = UvgGoldPrimary, fontSize = 13.sp)
-                                        Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = String.format(Locale.US, "%.1f", listing.rating),
+                                            text = "★",
+                                            color = UvgGoldPrimary,
+                                            fontSize = 13.sp
+                                        )
+
+                                        Spacer(
+                                            modifier = Modifier.width(4.dp)
+                                        )
+
+                                        Text(
+                                            text = String.format(
+                                                Locale.US,
+                                                "%.1f",
+                                                listing.rating
+                                            ),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
                                             color = UvgGoldDark
                                         )
+
                                         Text(
                                             text = " (${listing.reviewCount})",
                                             fontSize = 11.sp,
@@ -347,28 +478,36 @@ fun DetailScreen(
                                     }
                                 }
 
-                                if (listing.turnaroundTime.isNotBlank()) {
+                                if (
+                                    listing.turnaroundTime.isNotBlank()
+                                ) {
                                     Surface(
                                         color = UvgGreenLight,
-                                        shape = RoundedCornerShape(Spacing.CornerSmall)
+                                        shape = RoundedCornerShape(
+                                            Spacing.CornerSmall
+                                        )
                                     ) {
                                         Text(
                                             text = "⚡ ${listing.turnaroundTime}",
+                                            modifier = Modifier.padding(
+                                                horizontal = Spacing.Small,
+                                                vertical = 4.dp
+                                            ),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = UvgGreenDark,
-                                            modifier = Modifier.padding(horizontal = Spacing.Small, vertical = 4.dp)
+                                            color = UvgGreenDark
                                         )
                                     }
                                 }
                             }
                         }
 
-                        // Tarjeta del Emprendedor
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             color = UvgSurface,
-                            shape = RoundedCornerShape(Spacing.CornerLarge),
+                            shape = RoundedCornerShape(
+                                Spacing.CornerLarge
+                            ),
                             border = BorderStroke(1.dp, UvgBorder)
                         ) {
                             Row(
@@ -380,33 +519,46 @@ fun DetailScreen(
                                         .size(50.dp)
                                         .clip(CircleShape)
                                         .background(UvgGreenLight)
-                                        .border(1.dp, UvgGreenBorder, CircleShape),
+                                        .border(
+                                            width = 1.dp,
+                                            color = UvgGreenBorder,
+                                            shape = CircleShape
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = listing.sellerName.firstOrNull()?.uppercase() ?: "E",
+                                        text = listing.sellerName
+                                            .firstOrNull()
+                                            ?.uppercase()
+                                            ?: "E",
                                         fontSize = 22.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = UvgGreenDark
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.width(Spacing.Medium))
+                                Spacer(
+                                    modifier = Modifier.width(
+                                        Spacing.Medium
+                                    )
+                                )
 
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = listing.sellerName,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp,
-                                            color = UvgTextPrimary
-                                        )
-                                    }
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = listing.sellerName,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = UvgTextPrimary
+                                    )
+
                                     Text(
                                         text = listing.faculty,
                                         fontSize = 12.sp,
                                         color = UvgTextSecondary
                                     )
+
                                     Text(
                                         text = "Parte de la comunidad Nexora",
                                         fontSize = 11.sp,
@@ -417,14 +569,18 @@ fun DetailScreen(
                             }
                         }
 
-                        // Descripción del Servicio
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(
+                                Spacing.Small
+                            )
+                        ) {
                             Text(
                                 text = "Descripción del servicio",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = UvgTextPrimary
                             )
+
                             Text(
                                 text = listing.description,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -433,17 +589,25 @@ fun DetailScreen(
                             )
                         }
 
-                        // Qué incluye este servicio
                         if (listing.includes.isNotEmpty()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 color = UvgSurface,
-                                shape = RoundedCornerShape(Spacing.CornerLarge),
-                                border = BorderStroke(1.dp, UvgBorder)
+                                shape = RoundedCornerShape(
+                                    Spacing.CornerLarge
+                                ),
+                                border = BorderStroke(
+                                    1.dp,
+                                    UvgBorder
+                                )
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(Spacing.Medium),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    modifier = Modifier.padding(
+                                        Spacing.Medium
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(
+                                        10.dp
+                                    )
                                 ) {
                                     Text(
                                         text = "¿Qué incluye este servicio?",
@@ -452,17 +616,25 @@ fun DetailScreen(
                                         color = UvgTextPrimary
                                     )
 
-                                    listing.includes.forEach { itemText ->
-                                        Row(verticalAlignment = Alignment.Top) {
+                                    listing.includes.forEach { includedItem ->
+                                        Row(
+                                            verticalAlignment = Alignment.Top
+                                        ) {
                                             Text(
                                                 text = "✓",
                                                 color = UvgSuccess,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp
                                             )
-                                            Spacer(modifier = Modifier.width(Spacing.Small))
+
+                                            Spacer(
+                                                modifier = Modifier.width(
+                                                    Spacing.Small
+                                                )
+                                            )
+
                                             Text(
-                                                text = itemText,
+                                                text = includedItem,
                                                 fontSize = 13.sp,
                                                 color = UvgTextSecondary,
                                                 lineHeight = 18.sp
@@ -473,19 +645,30 @@ fun DetailScreen(
                             }
                         }
 
-                        // Ubicación y Lugar de Encuentro
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             color = UvgGreenLight,
-                            shape = RoundedCornerShape(Spacing.CornerLarge),
-                            border = BorderStroke(1.dp, UvgGreenBorder)
+                            shape = RoundedCornerShape(
+                                Spacing.CornerLarge
+                            ),
+                            border = BorderStroke(
+                                1.dp,
+                                UvgGreenBorder
+                            )
                         ) {
                             Row(
                                 modifier = Modifier.padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("📍", fontSize = 22.sp)
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "📍",
+                                    fontSize = 22.sp
+                                )
+
+                                Spacer(
+                                    modifier = Modifier.width(12.dp)
+                                )
+
                                 Column {
                                     Text(
                                         text = "Modalidad y lugar de atención",
@@ -493,6 +676,7 @@ fun DetailScreen(
                                         fontSize = 13.sp,
                                         color = UvgGreenDark
                                     )
+
                                     Text(
                                         text = "${listing.deliveryMode} • Consultá los detalles con quien publica.",
                                         fontSize = 12.sp,
@@ -502,12 +686,14 @@ fun DetailScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(Spacing.Large))
+                        Spacer(
+                            modifier = Modifier.height(
+                                Spacing.Large
+                            )
+                        )
                     }
                 }
             }
         }
     }
 }
-
-
