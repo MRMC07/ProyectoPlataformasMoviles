@@ -1,0 +1,59 @@
+NEXORA — CONTEXTO PARA PRESENTACIÓN
+Corte: 12 de noviembre de 2026. Equipo de tres integrantes. Completar nombres reales y contribuciones finales; no inventarlos.
+
+IDEA Y PROBLEMA
+Aplicación Android para conectar estudiantes emprendedores con otros estudiantes de las universidades de Guatemala: descubrir productos, ofrecer servicios y coordinar consultas.
+El equipo plantea facilitar visibilidad y contacto en un espacio común. Es una motivación de diseño, no un resultado de encuestas o estadísticas de mercado aportadas.
+Público de distintas universidades. Verde/blanco inspirado en UVG, sin exclusividad, aval institucional ni verificación académica.
+Propuesta de valor: comunidad universitaria, ofertas con precios en quetzales, cuenta para consultar/publicar y contacto con quien ofrece. No procesa pagos.
+
+RECORRIDO ACTUAL
+Bienvenida → crear cuenta/ingresar → catálogo con búsqueda/categorías → detalle → preparar consulta (modalidad/horario/nota) → revisar → abrir aplicación de correo.
+Perfil → publicaciones propias y borradores del dispositivo; formulario para publicar una oferta real.
+Abrir correo no prueba envío ni confirma compra o trato.
+
+IMPLEMENTADO
+Registro/ingreso/cierre de sesión con correo y contraseña en Firebase Authentication.
+Catálogo y creación de publicaciones conectados a Realtime Database; búsqueda/filtros en la interfaz.
+Detalle y precio con centavos; consulta y contacto por correo.
+Perfil básico, publicaciones propias por UID y borradores locales Room.
+Estados de carga/error/vacío; identidad Nexora y pantallas Compose/Material 3.
+
+TECNOLOGÍA Y ORGANIZACIÓN
+Android/Kotlin, Compose/Material 3, Navigation, ViewModel/Flow y repositorios por responsabilidad.
+Firebase Authentication para cuentas; Realtime Database para publicaciones; Room para borradores locales. No es Firestore.
+Es un proyecto Android organizado por paquetes. No atribuir microservicios, tecnologías o infraestructura avanzada que no existen.
+Los datos remotos se comparten con permisos entre dispositivos del mismo Firebase; los borradores no se sincronizan.
+Inspiración BEMIT adaptada a orden, nombres y estilos; no uso de CSS dentro de Compose.
+
+DISEÑO
+Marca Nexora con N, verde/blanco, tarjetas, navegación/campos oficiales y espaciados centralizados. El usuario aprobó el recorrido visual.
+Se quitaron referencias exclusivas a UVG y un sello de verificación sin respaldo.
+
+VALIDACIÓN Y EVIDENCIA
+Última compilación debug correcta; 11 pruebas unitarias sin fallos; lint completado con advertencias no bloqueantes; APK de pruebas instrumentadas compilado.
+Se ejecutaron previamente 6 pruebas instrumentadas en Pixel 7/API 37: no cubren los últimos cambios de correo/textos.
+24 comprobaciones de reglas pasaron en emulador oficial local: no certifica el despliegue efectivo ni toda la aplicación.
+El usuario logró crear/usar su cuenta y mostró una publicación real “Tutorial de cocina francesa”, Q125.00, su detalle y consulta. No prueba múltiples usuarios simultáneos, pagos, reseñas ni chat.
+Las reglas preparadas limitan lectura a cuentas autenticadas y escritura de publicaciones propias, con validaciones. No equivalen a permisos futuros de chat/reseñas. No se exportó la configuración efectiva publicada.
+
+PENDIENTES
+Chat interno persistente; solicitudes/tratos y estados; perfil académico persistente; reseñas ligadas a solicitudes completadas y reputación calculada.
+Una imagen por publicación: selección desde fotos, vista previa, almacenamiento remoto y visualización en catálogo/detalle. Existe imageUrl y soporte visual en el catálogo, pero la selección/subida aún está pendiente; no presentarla como terminada.
+Prueba entre dos cuentas y tercero sin permisos; verificar apertura del correo preparado en una aplicación instalada.
+Más accesibilidad/tamaños y recuperación de publicaciones pendientes tras cierre del proceso.
+Existen prototipos visuales de chat/reseñas, pero no su backend completo. Presentarlos como pendientes.
+
+COLABORACIÓN Y CONTINUACIÓN
+Equipo de tres personas, con uso de IA permitido. Antigravity asistió en pantallas; Codex en revisión, integración, correcciones y comprobaciones. La responsabilidad de entender/validar el resultado sigue siendo del equipo.
+Reparto propuesto: compañero 1 solicitudes/chat; compañero 2 perfil, imágenes de publicaciones y reseñas. No describir ese trabajo futuro como completado. Acordar contratos de datos y usar ramas/solicitudes de cambios.
+
+DEMO SUGERIDA
+Mostrar bienvenida para varias universidades; ingresar con cuenta de demostración sin revelar contraseña; catálogo/publicación real; preparar consulta y explicar correo; publicaciones propias/borrador local; cerrar con validación y pendientes.
+Para preparar guion, asumir 8 minutos y tres expositores; adaptar a la consigna real del curso.
+Usar capturas de la versión más reciente: las antiguas pueden mostrar textos UVG, “Verificado” o botón de chat ya corregidos.
+Rotular imágenes con ofertas ficticias como datos de prueba. Ocultar correos personales en la presentación.
+
+NO DISPONIBLE / NO INVENTAR
+No hay encuestas aportadas, métricas de adopción, número de usuarios, ventas, ingresos, estudio formal de usabilidad ni certificaciones universitarias.
+No cargar google-services.json, contraseñas, tokens, claves administrativas o información privada como fuentes. El contexto no los necesita.

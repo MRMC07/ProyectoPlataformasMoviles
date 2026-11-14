@@ -1,0 +1,46 @@
+COMPARTIR NEXORA
+
+GITHUB (RECOMENDADO)
+origin ya apunta a https://github.com/MRMC07/ProyectoPlataformasMoviles
+Los cambios Nexora de esta entrega siguen locales. Compartir el enlace sin subirlos no comparte esta versión.
+Ejecutar uno por uno desde PowerShell:
+
+Set-Location 'C:\Users\jlope\AndroidStudioProjects\ProyectoPlataformasMoviles'
+git status --short
+git switch -c entrega/nexora-base
+git add .
+git diff --cached --stat
+git diff --cached --name-only
+
+Revisar que incluya código nuevo, recursos, pruebas, servidor/documentacion y que NO incluya google-services.json, local.properties, builds, cachés o claves privadas. No usar git add -f.
+Si está correcto:
+git commit -m "Integra Nexora con autenticacion, publicaciones y documentacion"
+git push -u origin entrega/nexora-base
+
+El agente no ejecutó commit/push/merge. Si la rama existe, revisar su estado y usar git switch entrega/nexora-base o un nombre nuevo, sin sobrescribirla.
+Si falta permiso de push, pedir acceso de colaborador al dueño. No compartir credenciales ni forzar push.
+Abrir una solicitud de cambios hacia la rama de integración que acuerde el equipo y partir todos del mismo commit/base.
+
+COMPAÑEROS
+Después de subir la rama, en una carpeta nueva:
+git clone --branch entrega/nexora-base https://github.com/MRMC07/ProyectoPlataformasMoviles.git Nexora
+Abrir Nexora (la carpeta con settings.gradle.kts) en Android Studio.
+Si ya tienen un clon con cambios propios, guardarlos en su rama y actualizar por Git; no copiar encima ni resetear.
+Crear cada uno su rama desde la base común: funcionalidad/solicitudes-chat o funcionalidad/perfil-resenas. Usar el prompt correspondiente en documentacion.
+Coordinar archivos compartidos y revisar mediante solicitudes de cambios.
+
+CONFIGURACIÓN APARTE
+Cada copia necesita el archivo actual app/google-services.json en esa ruta. Está excluido de Git y del ZIP limpio.
+Compartirlo directamente con los compañeros o descargarlo desde la app Android com.example.proyectoplataformasmoviles del mismo proyecto Firebase. No crear otro Firebase.
+Es configuración de cliente, no una credencial administrativa. No pasar contraseñas Google, tokens o cuentas de servicio.
+Configurar Gradle con JDK 21 y descargar SDK/API 37 según solicite Android Studio. Cada laptop configura su SDK y local.properties; no copiar rutas de otra máquina.
+Sincronizar con internet; luego ejecutar desde la raíz:
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+Emulador/teléfono Android API 26 o superior. Internet para cuentas/publicaciones. Las cuentas/datos remotos usan el mismo Firebase; borradores locales por dispositivo.
+
+ZIP ALTERNATIVO
+El ZIP limpio contiene código, wrapper, recursos, pruebas, reglas y documentación. Excluye Git, builds, cachés, google-services.json y local.properties.
+Extraer en carpeta nueva, agregar la configuración Android, abrir la raíz y sincronizar. GitHub es mejor para colaboración/historial; un APK no sustituye el código fuente.
+
+NOTEBOOKLM
+Cargar CONTEXTO_NOTEBOOKLM.txt como fuente y capturas reales actuales. Usar PROMPT_NOTEBOOKLM.txt para dirigir el guion/presentación. No cargar configuración Firebase, datos privados ni todo el repositorio sin revisar.

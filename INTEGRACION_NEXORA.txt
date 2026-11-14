@@ -1,0 +1,16 @@
+NEXORA — CONTINUIDAD DEL EQUIPO
+Actualizado al 12 de noviembre de 2026.
+
+Proyecto activo: C:\Users\jlope\AndroidStudioProjects\ProyectoPlataformasMoviles
+Repositorio: https://github.com/MRMC07/ProyectoPlataformasMoviles
+MyApplication y la entrega antigua de Descargas no son la base actual.
+
+Estado completo y evidencia: documentacion/ESTADO_Y_CONTINUIDAD.txt
+Entrega por GitHub o ZIP: documentacion/COMO_COMPARTIR.txt
+Prompts de continuación: documentacion/PROMPT_COMPANERO_1.txt y PROMPT_COMPANERO_2.txt
+Presentación: documentacion/CONTEXTO_NOTEBOOKLM.txt y PROMPT_NOTEBOOKLM.txt
+
+Base actual: cuentas por correo, publicaciones Realtime Database, catálogo/detalle, consulta por correo y borradores Room. El usuario confirmó acceso y mostró una publicación real.
+Pendientes: chat interno, solicitudes persistentes, perfil académico, selección/subida de una imagen por publicación y reseñas conectadas.
+Última verificación de código: assembleDebug, 11 unitarias sin fallos, lintDebug y assembleDebugAndroidTest correctos. Las seis instrumentadas previas no cubren los últimos cambios de correo/textos. Reglas locales con 24 comprobaciones en emulador; no se exportó la configuración efectiva publicada.
+Esta entrega no realizó commits, pushes, merges ni despliegues.

@@ -1,5 +1,5 @@
 package com.example.proyectoplataformasmoviles.screens
-
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -52,7 +52,10 @@ data class Publicacion(
 
 @Composable
 fun InicioScreen(
-    onPublicacionClick: () -> Unit
+    onPublicacionClick: () -> Unit,
+    onPublishClick: () -> Unit,
+    onMyProductsClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
 
     var busqueda by remember { mutableStateOf("") }
@@ -106,7 +109,7 @@ fun InicioScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { },
+                onClick = onPublishClick,
                 containerColor = Color(0xFF17345F),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp)
@@ -118,7 +121,10 @@ fun InicioScreen(
             }
         },
         bottomBar = {
-            BarraInferior()
+            BarraInferior(
+                onMyProductsClick = onMyProductsClick,
+                onProfileClick = onProfileClick
+            )
         }
     ) { innerPadding ->
 
@@ -416,9 +422,12 @@ fun PublicacionCard(
     }
 }
 
-@Composable
-fun BarraInferior() {
 
+@Composable
+fun BarraInferior(
+    onMyProductsClick: () -> Unit,
+    onProfileClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -427,7 +436,6 @@ fun BarraInferior() {
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         BarraItem(
             simbolo = "⌂",
             texto = "Inicio"
@@ -440,15 +448,43 @@ fun BarraInferior() {
 
         BarraItem(
             simbolo = "▣",
-            texto = "Mis Productos"
+            texto = "Mis Productos",
+            onClick = onMyProductsClick
         )
 
         BarraItem(
             simbolo = "●",
-            texto = "Perfil"
+            texto = "Perfil",
+            onClick = onProfileClick
         )
     }
 }
+
+@Composable
+fun BarraItem(
+    simbolo: String,
+    texto: String,
+    onClick: () -> Unit = {}
+) {
+    Column(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = simbolo,
+            fontSize = 18.sp,
+            color = Color(0xFF17345F)
+        )
+
+        Text(
+            text = texto,
+            fontSize = 9.sp
+        )
+    }
+}
+
 
 @Composable
 fun BarraItem(
