@@ -3,15 +3,16 @@ package com.example.proyectoplataformasmoviles.data.repository
 import com.example.proyectoplataformasmoviles.domain.model.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ServerValue
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class ProfileRepository(
-    database: FirebaseDatabase,
+    firestore: FirebaseFirestore,
     private val authentication: FirebaseAuth
 ) {
-    private val profiles = database.getReference("perfiles")
+    private val profiles = firestore.collection("users")
 
     private fun requireCurrentUser(userId: String) =
         requireNotNull(authentication.currentUser) {
@@ -24,20 +25,23 @@ class ProfileRepository(
 
     suspend fun load(userId: String): UserProfile {
         val user = requireCurrentUser(userId)
-        val snapshot = profiles.child(userId).get().await()
+        val snapshot = profiles.document(userId).get().await()
 
         requireCurrentUser(userId)
 
         return UserProfile(
-            name = snapshot.child("nombre")
-                .getValue(String::class.java)
+            name = (snapshot.get("nombre") as? String)
+                ?: (snapshot.get("name") as? String)
                 ?: user.displayName.orEmpty(),
-            university = snapshot.child("universidad")
-                .getValue(String::class.java).orEmpty(),
-            description = snapshot.child("descripcion")
-                .getValue(String::class.java).orEmpty(),
-            photoBase64 = snapshot.child("fotoBase64")
-                .getValue(String::class.java).orEmpty()
+            university = (snapshot.get("universidad") as? String)
+                ?: (snapshot.get("university") as? String)
+                ?: "",
+            description = (snapshot.get("descripcion") as? String)
+                ?: (snapshot.get("description") as? String)
+                ?: "",
+            photoBase64 = (snapshot.get("fotoBase64") as? String)
+                ?: (snapshot.get("photoBase64") as? String)
+                ?: ""
         )
     }
 
@@ -51,14 +55,15 @@ class ProfileRepository(
             validationError.orEmpty()
         }
 
-        profiles.child(userId).updateChildren(
+        profiles.document(userId).set(
             mapOf(
                 "nombre" to normalizedProfile.name,
                 "universidad" to normalizedProfile.university,
                 "descripcion" to normalizedProfile.description,
                 "fotoBase64" to normalizedProfile.photoBase64,
-                "actualizadoEn" to ServerValue.TIMESTAMP
-            )
+                "actualizadoEn" to FieldValue.serverTimestamp()
+            ),
+            SetOptions.merge()
         ).await()
 
         requireCurrentUser(userId)

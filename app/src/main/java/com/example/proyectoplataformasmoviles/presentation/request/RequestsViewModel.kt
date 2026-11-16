@@ -1,11 +1,13 @@
 package com.example.proyectoplataformasmoviles.presentation.request
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectoplataformasmoviles.data.repository.RequestRepository
 import com.example.proyectoplataformasmoviles.domain.model.Listing
 import com.example.proyectoplataformasmoviles.domain.model.RequestStatus
 import com.example.proyectoplataformasmoviles.domain.model.ServiceRequest
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -211,11 +213,28 @@ class NewRequestViewModel(
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                Log.e(
+                    "NexoraSolicitud",
+                    "No se pudo guardar la solicitud",
+                    error
+                )
+
                 _uiState.update {
                     it.copy(
                         isSending = false,
-                        errorMessage = "No pudimos confirmar el envío. Revisá la conexión y Mis solicitudes antes de reintentar: el envío podría completarse al recuperar la conexión."
+                        errorMessage = when (error) {
+                            is FirebaseFirestoreException -> when (error.code) {
+                                FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+                                    "Firebase rechazó la solicitud. Revisá las reglas de Firestore para la colección requests."
+                                FirebaseFirestoreException.Code.UNAVAILABLE ->
+                                    "Firestore no está disponible. Revisá la conexión e intentá de nuevo."
+                                else -> error.localizedMessage
+                                    ?: "Firestore no pudo guardar la solicitud."
+                            }
+                            else -> error.localizedMessage
+                                ?: "No se pudo guardar la solicitud. Revisá Mis solicitudes antes de reintentar."
+                        }
                     )
                 }
             }

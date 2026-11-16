@@ -6,34 +6,29 @@ import com.example.proyectoplataformasmoviles.domain.repository.ListingRepositor
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ServerValue
-import com.google.firebase.database.ValueEventListener
-import java.math.RoundingMode
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
+import java.math.RoundingMode
 import com.example.proyectoplataformasmoviles.data.repository.leerPublicacion as parseListing
 
 class FirebaseListingRepository(
-    database: FirebaseDatabase,
+    firestore: FirebaseFirestore,
     private val authentication: FirebaseAuth
 ) : ListingRepository {
 
-    private val databaseRoot = database.reference
-    private val listings = databaseRoot.child("products")
-    private val listingImages = databaseRoot.child("listingImages")
+    private val listings = firestore.collection("listings")
+    private val listingImages = firestore.collection("listingImages")
 
     private val reviewRepository = ReviewRepository(
-        database = database,
+        firestore = firestore,
         authentication = authentication
     )
-
     override fun observeListings(): Flow<List<Listing>> {
         return combine(
             observeListingData(),
@@ -51,52 +46,43 @@ class FirebaseListingRepository(
     }
 
     private fun observeListingData(): Flow<List<Listing>> = callbackFlow {
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val availableListings = snapshot.children.mapNotNull { listingSnapshot ->
-                    val fields = listingSnapshot.children.mapNotNull { field ->
-                        val key = field.key
-                        val value = field.value
+        val registration = listings.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
 
-                        if (key != null && value != null) {
-                            key to value
-                        } else {
-                            null
-                        }
-                    }.toMap()
-
-                    parseListing(
-                        listingSnapshot.key.orEmpty(),
-                        fields
-                    )
+            val availableListings = snapshot
+                ?.documents
+                .orEmpty()
+                .mapNotNull { document ->
+                    document.data?.let { fields ->
+                        parseListing(document.id, fields)
+                    }
                 }
 
-                trySend(availableListings)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
-            }
+            trySend(availableListings)
         }
 
-        listings.addValueEventListener(listener)
-
         awaitClose {
-            listings.removeEventListener(listener)
+            registration.remove()
         }
     }
 
     override fun observeListingImage(
         listingId: String
     ): Flow<String?> = callbackFlow {
-        val reference = listingImages.child(listingId)
+        val registration = listingImages.document(listingId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
 
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val imageData = snapshot.value
+                val imageData = snapshot?.get("imageBase64")
 
                 when {
-                    imageData == null -> {
+                    snapshot == null || !snapshot.exists() -> {
                         trySend(null)
                     }
 
@@ -116,15 +102,8 @@ class FirebaseListingRepository(
                 }
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
-            }
-        }
-
-        reference.addValueEventListener(listener)
-
         awaitClose {
-            reference.removeEventListener(listener)
+            registration.remove()
         }
     }
 
@@ -134,7 +113,6 @@ class FirebaseListingRepository(
     ) {
         val user = requireRegisteredUser()
         val priceInCents = validateListing(listing)
-
         validateImage(imageBase64)
 
         val existingListing = readListingData(listing.id)
@@ -152,33 +130,39 @@ class FirebaseListingRepository(
             "La sesión cambió. Volvé a ingresar."
         }
 
-        val changes = mutableMapOf<String, Any?>(
-            "products/${listing.id}" to mapOf(
-                "id" to listing.id,
-                "nombre" to listing.title.trim(),
-                "descripcion" to listing.description.trim(),
-                "precio" to priceInCents / 100.0,
-                "precioCentavos" to priceInCents,
-                "categoria" to listing.category.trim(),
-                "nombreVendedor" to (
-                        user.displayName ?: user.email.orEmpty()
-                        ),
-                "correoVendedor" to user.email.orEmpty(),
-                "propietario" to user.uid,
-                "imageUrl" to listing.imageUrl,
-                "creadaEn" to ServerValue.TIMESTAMP,
-                "isActive" to true,
-                "hasImage" to (imageBase64 != null)
-            )
+        val nombreVendedor = user.displayName
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: "Estudiante"
+
+        val datosPublicacion = mapOf(
+            "title" to listing.title.trim(),
+            "description" to listing.description.trim(),
+            "price" to priceInCents / 100.0,
+            "priceCents" to priceInCents,
+            "category" to listing.category.trim(),
+            "sellerName" to nombreVendedor,
+            "imageUrl" to listing.imageUrl,
+            "ownerId" to user.uid,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "isActive" to true,
+            "hasImage" to (imageBase64 != null)
         )
+
+        val batch = listings.firestore.batch()
+        batch.set(listings.document(listing.id), datosPublicacion)
 
         if (imageBase64 != null) {
-            changes["listingImages/${listing.id}"] = imageBase64
+            batch.set(
+                listingImages.document(listing.id),
+                mapOf(
+                    "ownerId" to user.uid,
+                    "imageBase64" to imageBase64
+                )
+            )
         }
 
-        confirmWrite(
-            databaseRoot.updateChildren(changes)
-        )
+        confirmWrite(batch.commit())
     }
 
     override suspend fun updateListing(
@@ -188,7 +172,6 @@ class FirebaseListingRepository(
     ) {
         val user = requireRegisteredUser()
         val priceInCents = validateListing(listing)
-
         validateImage(imageBase64)
 
         require(imageBase64 == null || !removeImage) {
@@ -201,8 +184,7 @@ class FirebaseListingRepository(
             "La publicación ya no está disponible."
         }
 
-        val ownerId = existingListing.child("propietario")
-            .getValue(String::class.java)
+        val ownerId = existingListing.getString("ownerId")
 
         check(ownerId == user.uid) {
             "Solo podés editar tus propias publicaciones."
@@ -212,29 +194,38 @@ class FirebaseListingRepository(
             "La sesión cambió. Volvé a ingresar."
         }
 
-        val listingPath = "products/${listing.id}"
+        val listingDocument = listings.document(listing.id)
+        val imageDocument = listingImages.document(listing.id)
 
-        val changes = mutableMapOf<String, Any?>(
-            "$listingPath/nombre" to listing.title.trim(),
-            "$listingPath/descripcion" to listing.description.trim(),
-            "$listingPath/precio" to priceInCents / 100.0,
-            "$listingPath/precioCentavos" to priceInCents,
-            "$listingPath/categoria" to listing.category.trim()
+        val changes = mutableMapOf<String, Any>(
+            "title" to listing.title.trim(),
+            "description" to listing.description.trim(),
+            "price" to priceInCents / 100.0,
+            "priceCents" to priceInCents,
+            "category" to listing.category.trim()
         )
+
+        val batch = listings.firestore.batch()
 
         if (imageBase64 != null) {
-            changes["$listingPath/hasImage"] = true
-            changes["$listingPath/imageUrl"] = ""
-            changes["listingImages/${listing.id}"] = imageBase64
+            changes["hasImage"] = true
+            changes["imageUrl"] = ""
+
+            batch.set(
+                imageDocument,
+                mapOf(
+                    "ownerId" to user.uid,
+                    "imageBase64" to imageBase64
+                )
+            )
         } else if (removeImage) {
-            changes["$listingPath/hasImage"] = false
-            changes["$listingPath/imageUrl"] = ""
-            changes["listingImages/${listing.id}"] = null
+            changes["hasImage"] = false
+            changes["imageUrl"] = ""
+            batch.delete(imageDocument)
         }
 
-        confirmWrite(
-            databaseRoot.updateChildren(changes)
-        )
+        batch.update(listingDocument, changes)
+        confirmWrite(batch.commit())
     }
 
     override suspend fun setListingActive(
@@ -253,10 +244,7 @@ class FirebaseListingRepository(
             "La publicación ya no está disponible."
         }
 
-        val ownerId = existingListing.child("propietario")
-            .getValue(String::class.java)
-
-        check(ownerId == user.uid) {
+        check(existingListing.getString("ownerId") == user.uid) {
             "Solo podés administrar tus propias publicaciones."
         }
 
@@ -265,10 +253,9 @@ class FirebaseListingRepository(
         }
 
         confirmWrite(
-            listings.child(listingId).updateChildren(
-                mapOf(
-                    "isActive" to isActive
-                )
+            listings.document(listingId).update(
+                "isActive",
+                isActive
             )
         )
     }
@@ -325,9 +312,7 @@ class FirebaseListingRepository(
             imageBase64.isNotBlank() &&
                     imageBase64.length <= MAX_LISTING_IMAGE_LENGTH &&
                     imageBase64.length % 4 == 0 &&
-                    imageBase64.matches(
-                        Regex("[A-Za-z0-9+/]+={0,2}")
-                    )
+                    imageBase64.matches(Regex("[A-Za-z0-9+/]+={0,2}"))
         ) {
             "La imagen supera el tamaño permitido o no tiene un formato válido."
         }
@@ -335,21 +320,19 @@ class FirebaseListingRepository(
 
     private suspend fun readListingData(
         listingId: String
-    ): DataSnapshot {
-        return withTimeoutOrNull(10_000L) {
-            listings.child(listingId).get().await()
-        } ?: error(
-            "No pudimos consultar la publicación. Revisá tu conexión."
-        )
-    }
+    ) = withTimeoutOrNull(10_000L) {
+        listings.document(listingId).get().await()
+    } ?: error(
+        "No pudimos consultar la publicación. Revisá tu conexión."
+    )
 
     private suspend fun confirmWrite(task: Task<Void>) {
-        val isConfirmed = withTimeoutOrNull(10_000L) {
+        val confirmed = withTimeoutOrNull(10_000L) {
             task.await()
             true
         } ?: false
 
-        check(isConfirmed) {
+        check(confirmed) {
             "No pudimos confirmar el guardado. Puede completarse al recuperar la conexión."
         }
     }

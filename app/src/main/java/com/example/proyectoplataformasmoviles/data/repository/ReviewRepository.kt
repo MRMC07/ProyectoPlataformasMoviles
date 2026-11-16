@@ -3,13 +3,13 @@ package com.example.proyectoplataformasmoviles.data.repository
 import com.example.proyectoplataformasmoviles.domain.model.ListingReview
 import com.example.proyectoplataformasmoviles.domain.model.ReviewSummary
 import com.example.proyectoplataformasmoviles.domain.model.summarizeReviews
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.Query
-import com.google.firebase.database.ServerValue
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -18,27 +18,44 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 
 class ReviewRepository(
-    database: FirebaseDatabase,
+    firestore: FirebaseFirestore,
     private val authentication: FirebaseAuth
 ) {
-    private val reviews = database.getReference("reviews")
-    private val listings = database.getReference("products")
-    private val requests = database.getReference("requests")
+    private val reviews = firestore.collection("reviews")
+    private val listings = firestore.collection("listings")
+    private val requests = firestore.collection("requests")
 
     fun observeReviews(listingId: String): Flow<List<ListingReview>> {
-        return observeSnapshot(reviews.child(listingId)).map { snapshot ->
-            snapshot.children.mapNotNull(::parseReview)
-                .sortedByDescending { it.updatedAt }
+        val query = reviews
+            .document(listingId)
+            .collection("opiniones")
+            .orderBy("updatedAt", Query.Direction.DESCENDING)
+
+        return observeSnapshot(query).map { snapshot ->
+            snapshot.documents.mapNotNull(::parseReview)
         }
     }
 
     fun observeSummaries(): Flow<Map<String, ReviewSummary>> {
-        return observeSnapshot(reviews).map { snapshot ->
-            snapshot.children.associate { listingSnapshot ->
-                listingSnapshot.key.orEmpty() to summarizeReviews(
-                    listingSnapshot.children.mapNotNull(::parseReview)
+        return observeSnapshot(
+            reviews.firestore.collectionGroup("opiniones")
+        ).map { snapshot ->
+            snapshot.documents
+                .mapNotNull { document ->
+                    val listingId = document.reference.parent.parent?.id
+                        ?: return@mapNotNull null
+                    val review = parseReview(document)
+                        ?: return@mapNotNull null
+
+                    listingId to review
+                }
+                .groupBy(
+                    keySelector = { it.first },
+                    valueTransform = { it.second }
                 )
-            }
+                .mapValues { (_, listingReviews) ->
+                    summarizeReviews(listingReviews)
+                }
         }
     }
 
@@ -46,15 +63,14 @@ class ReviewRepository(
         listingId: String,
         userId: String
     ): Flow<String?> {
-        val query = requests.orderByChild("customerId")
-            .equalTo(userId)
+        val query = requests
+            .whereEqualTo("customerId", userId)
+            .whereEqualTo("listingId", listingId)
+            .whereEqualTo("status", "COMPLETED")
+            .limit(1)
 
         return observeSnapshot(query).map { snapshot ->
-            findCompletedRequestId(
-                snapshot = snapshot,
-                listingId = listingId,
-                userId = userId
-            )
+            snapshot.documents.firstOrNull()?.id
         }
     }
 
@@ -66,9 +82,7 @@ class ReviewRepository(
     ) {
         val user = authentication.currentUser
             ?.takeUnless { it.isAnonymous || it.email == null }
-            ?: error(
-                "Iniciá sesión con tu cuenta para escribir una reseña."
-            )
+            ?: error("Iniciá sesión con tu cuenta para escribir una reseña.")
 
         check(user.uid == userId) {
             "La sesión cambió. Volvé a abrir la publicación."
@@ -79,129 +93,101 @@ class ReviewRepository(
         }
 
         val normalizedComment = comment.trim()
-
         require(normalizedComment.length in 1..500) {
             "El comentario debe tener entre 1 y 500 caracteres."
         }
 
-        val reference = reviews.child(listingId).child(userId)
-
-        val listingSnapshot = withTimeoutOrNull(10_000L) {
-            listings.child(listingId).get().await()
-        } ?: error(
-            "No pudimos consultar la publicación. Revisá tu conexión."
-        )
+        val listingSnapshot = listings
+            .document(listingId)
+            .get(Source.SERVER)
+            .await()
 
         check(listingSnapshot.exists()) {
             "La publicación ya no está disponible."
         }
 
-        val ownerId = listingSnapshot.child("propietario")
-            .getValue(String::class.java)
-
+        val ownerId = listingSnapshot.getString("ownerId")
         check(!ownerId.isNullOrBlank() && ownerId != userId) {
             "No podés reseñar tus propias publicaciones."
         }
 
-        check(listingSnapshot.child("isActive").value != false) {
-            "No se pueden guardar reseñas en una publicación retirada."
+        val completedRequest = requests
+            .whereEqualTo("customerId", userId)
+            .whereEqualTo("listingId", listingId)
+            .whereEqualTo("status", "COMPLETED")
+            .limit(1)
+            .get(Source.SERVER)
+            .await()
+            .documents
+            .firstOrNull()
+            ?: error(
+                "Necesitás una solicitud completada de este servicio para escribir una reseña."
+            )
+
+        check(completedRequest.getString("providerId") == ownerId) {
+            "La solicitud completada no corresponde a esta persona vendedora."
         }
-
-        val requestSnapshot = withTimeoutOrNull(10_000L) {
-            requests.orderByChild("customerId")
-                .equalTo(userId)
-                .get()
-                .await()
-        } ?: error(
-            "No pudimos consultar tus solicitudes. Revisá tu conexión."
-        )
-
-        val completedRequestId = findCompletedRequestId(
-            snapshot = requestSnapshot,
-            listingId = listingId,
-            userId = userId
-        ) ?: error(
-            "Necesitás una solicitud completada de este servicio para escribir una reseña."
-        )
-
-        val existingReview = withTimeoutOrNull(10_000L) {
-            reference.get().await()
-        } ?: error(
-            "No pudimos consultar tu reseña. Revisá tu conexión."
-        )
 
         check(authentication.currentUser?.uid == userId) {
             "La sesión cambió. Volvé a abrir la publicación."
         }
 
-        val changes = mutableMapOf<String, Any>(
-            "requestId" to completedRequestId,
-            "authorName" to user.displayName.orEmpty()
+        val referencia = reviews
+            .document(listingId)
+            .collection("opiniones")
+            .document(userId)
+
+        val existente = referencia.get(Source.SERVER).await()
+
+        val datos = mutableMapOf<String, Any>(
+            "requestId" to completedRequest.id,
+            "authorName" to user.displayName
+                .orEmpty()
                 .trim()
                 .take(80)
                 .ifBlank { "Usuario" },
             "rating" to rating,
             "comment" to normalizedComment,
-            "updatedAt" to ServerValue.TIMESTAMP
+            "updatedAt" to FieldValue.serverTimestamp()
         )
 
-        if (!existingReview.exists()) {
-            changes["createdAt"] = ServerValue.TIMESTAMP
+        datos["createdAt"] = if (existente.exists()) {
+            existente.getTimestamp("createdAt")
+                ?: error("La reseña guardada no tiene una fecha válida.")
+        } else {
+            FieldValue.serverTimestamp()
         }
 
-        val task = reference.updateChildren(changes)
-
-        val isConfirmed = withTimeoutOrNull(10_000L) {
-            task.await()
+        val confirmada = withTimeoutOrNull(10_000L) {
+            referencia.set(datos).await()
             true
         } ?: false
 
-        check(isConfirmed) {
+        check(confirmada) {
             "No pudimos confirmar el guardado. Puede completarse al recuperar la conexión."
         }
     }
 
-    private fun findCompletedRequestId(
-        snapshot: DataSnapshot,
-        listingId: String,
-        userId: String
-    ): String? {
-        return snapshot.children.firstOrNull {
-            it.child("listingId").value == listingId &&
-                    it.child("customerId").value == userId &&
-                    it.child("status").value == "COMPLETED"
-        }?.key
-    }
-
     private fun parseReview(
-        snapshot: DataSnapshot
+        document: com.google.firebase.firestore.DocumentSnapshot
     ): ListingReview? {
-        val userId = snapshot.key ?: return null
-
-        val authorName = snapshot.child("authorName").value as? String
+        val userId = document.id
+        val authorName = document.getString("authorName") ?: return null
+        val rating = document.getLong("rating")?.toInt() ?: return null
+        val comment = document.getString("comment") ?: return null
+        val createdAt = document.getTimestamp("createdAt")?.toDate()?.time
             ?: return null
-
-        val rating = snapshot.child("rating").value as? Number
-            ?: return null
-
-        val comment = snapshot.child("comment").value as? String
-            ?: return null
-
-        val createdAt = snapshot.child("createdAt").value as? Number
-            ?: return null
-
-        val updatedAt = snapshot.child("updatedAt").value as? Number
+        val updatedAt = document.getTimestamp("updatedAt")?.toDate()?.time
             ?: return null
 
         if (
             authorName.isBlank() ||
             authorName.length > 80 ||
-            rating.toDouble() !in 1.0..5.0 ||
-            rating.toDouble() % 1.0 != 0.0 ||
+            rating !in 1..5 ||
             comment.isBlank() ||
             comment.length > 500 ||
-            createdAt.toLong() <= 0 ||
-            updatedAt.toLong() <= 0
+            createdAt <= 0 ||
+            updatedAt <= 0
         ) {
             return null
         }
@@ -209,30 +195,38 @@ class ReviewRepository(
         return ListingReview(
             userId = userId,
             authorName = authorName,
-            rating = rating.toInt(),
+            rating = rating,
             comment = comment,
-            createdAt = createdAt.toLong(),
-            updatedAt = updatedAt.toLong()
+            createdAt = createdAt,
+            updatedAt = updatedAt
         )
     }
 
-    private fun observeSnapshot(
-        reference: Query
-    ): Flow<DataSnapshot> = callbackFlow {
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot)
+    private fun observeSnapshot(query: Query): Flow<QuerySnapshot> =
+        callbackFlow {
+            val registro = query.addSnapshotListener { snapshot, error ->
+                when {
+                    error != null -> close(error)
+                    snapshot != null -> trySend(snapshot)
+                    else -> close(
+                        IllegalStateException("No se pudieron cargar las reseñas.")
+                    )
+                }
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+            awaitClose {
+                registro.remove()
             }
         }
 
-        reference.addValueEventListener(listener)
+    private suspend fun confirmarEscritura(task: Task<Void>) {
+        val confirmada = withTimeoutOrNull(10_000L) {
+            task.await()
+            true
+        } ?: false
 
-        awaitClose {
-            reference.removeEventListener(listener)
+        check(confirmada) {
+            "No pudimos confirmar el guardado. Revisá tu conexión."
         }
     }
 }

@@ -5,12 +5,13 @@ import com.example.proyectoplataformasmoviles.domain.model.RequestStatus
 import com.example.proyectoplataformasmoviles.domain.model.ServiceRequest
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.Query
-import com.google.firebase.database.ServerValue
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -18,19 +19,21 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 
+
 class RequestRepository(
-    database: FirebaseDatabase,
+    firestore: FirebaseFirestore,
     private val authentication: FirebaseAuth
 ) {
-    private val requests = database.getReference("requests")
+    private val requests = firestore.collection("requests")
+    private val listings = firestore.collection("listings")
 
     fun observeRequests(userId: String): Flow<List<ServiceRequest>> {
         return combine(
             observeQuery(
-                requests.orderByChild("customerId").equalTo(userId)
+                requests.whereEqualTo("customerId", userId)
             ),
             observeQuery(
-                requests.orderByChild("providerId").equalTo(userId)
+                requests.whereEqualTo("providerId", userId)
             )
         ) { sentRequests, receivedRequests ->
             (sentRequests + receivedRequests)
@@ -49,12 +52,8 @@ class RequestRepository(
     ) {
         val user = requireUser(userId)
 
-        require(listing.isActive && listing.propietario.isNotBlank()) {
-            "La publicación no está disponible."
-        }
-
-        require(listing.propietario != userId) {
-            "No podés solicitar tu propio servicio."
+        require(requestId.isNotBlank() && '/' !in requestId) {
+            "El identificador de la solicitud no es válido."
         }
 
         require(modality.trim().length in 1..80) {
@@ -69,26 +68,62 @@ class RequestRepository(
             "Escribí un mensaje de entre 10 y 1000 caracteres."
         }
 
+        // Use the server as the source of truth: the Listing passed by the UI
+        // can be stale if the seller activated the listing moments ago.
+        val listingSnapshot = listings.document(listing.id)
+            .get(Source.SERVER)
+            .await()
+
+        check(listingSnapshot.exists()) {
+            "La publicación no está disponible."
+        }
+
+        check(listingSnapshot.getBoolean("isActive") != false) {
+            "La publicación está pausada. Pedile a quien la publicó que la active."
+        }
+
+        val providerId = listingSnapshot.getString("ownerId")
+            ?: listingSnapshot.getString("propietario")
+            ?: listing.propietario.takeIf { it.isNotBlank() }
+            ?: error("La publicación no tiene un vendedor válido.")
+
+        require(providerId != userId) {
+            "No podés solicitar tu propio servicio."
+        }
+
+        val listingTitle = listingSnapshot.getString("title")
+            ?: listingSnapshot.getString("nombre")
+            ?: listing.title.takeIf { it.isNotBlank() }
+            ?: error("La publicación no tiene un título válido.")
+
+        val providerName = listingSnapshot.getString("sellerName")
+            ?: listingSnapshot.getString("nombreVendedor")
+            ?: listing.sellerName.takeIf { it.isNotBlank() }
+            ?: error("La publicación no tiene un vendedor válido.")
+
+        val customerName = user.displayName
+            .orEmpty()
+            .trim()
+            .take(80)
+            .ifBlank { "Usuario" }
+
+        val data = mapOf(
+            "listingId" to listing.id,
+            "listingTitle" to listingTitle,
+            "customerId" to userId,
+            "customerName" to customerName,
+            "providerId" to providerId,
+            "providerName" to providerName,
+            "modality" to modality.trim(),
+            "schedule" to schedule.trim(),
+            "note" to note.trim(),
+            "status" to RequestStatus.PENDING.name,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "updatedAt" to FieldValue.serverTimestamp()
+        )
+
         confirmWrite(
-            requests.child(requestId).setValue(
-                mapOf(
-                    "listingId" to listing.id,
-                    "listingTitle" to listing.title,
-                    "customerId" to userId,
-                    "customerName" to user.displayName.orEmpty()
-                        .trim()
-                        .take(80)
-                        .ifBlank { "Usuario" },
-                    "providerId" to listing.propietario,
-                    "providerName" to listing.sellerName.take(200),
-                    "modality" to modality.trim(),
-                    "schedule" to schedule.trim(),
-                    "note" to note.trim(),
-                    "status" to RequestStatus.PENDING.name,
-                    "createdAt" to ServerValue.TIMESTAMP,
-                    "updatedAt" to ServerValue.TIMESTAMP
-                )
-            )
+            requests.document(requestId).set(data)
         )
     }
 
@@ -99,63 +134,81 @@ class RequestRepository(
     ) {
         requireUser(userId)
 
-        require(status in request.availableStatuses(userId)) {
+        val requestDocument = requests.document(request.id)
+        val snapshot = requestDocument.get().await()
+
+        check(snapshot.exists()) {
+            "La solicitud ya no está disponible."
+        }
+
+        val currentRequest = parseRequest(snapshot)
+            ?: error("La solicitud guardada no tiene un formato válido.")
+
+        require(status in currentRequest.availableStatuses(userId)) {
             "Este cambio de estado no está permitido."
         }
 
         confirmWrite(
-            requests.child(request.id).updateChildren(
+            requestDocument.update(
                 mapOf(
                     "status" to status.name,
-                    "updatedAt" to ServerValue.TIMESTAMP
+                    "updatedAt" to FieldValue.serverTimestamp()
                 )
             )
         )
     }
 
-    private fun requireUser(userId: String) =
-        authentication.currentUser?.takeIf {
+    private fun requireUser(userId: String): FirebaseUser {
+        return authentication.currentUser?.takeIf {
             it.uid == userId &&
                     !it.isAnonymous &&
                     it.email != null
         } ?: error(
             "La sesión cambió. Iniciá sesión con tu cuenta."
         )
+    }
 
     private fun observeQuery(
         query: Query
     ): Flow<List<ServiceRequest>> = callbackFlow {
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(
-                    snapshot.children.mapNotNull(::parseRequest)
-                )
+        val registration = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
-            }
+            trySend(
+                snapshot?.documents
+                    .orEmpty()
+                    .mapNotNull(::parseRequest)
+            )
         }
 
-        query.addValueEventListener(listener)
-
         awaitClose {
-            query.removeEventListener(listener)
+            registration.remove()
         }
     }
 
     private fun parseRequest(
-        snapshot: DataSnapshot
+        snapshot: DocumentSnapshot
     ): ServiceRequest? {
         fun text(field: String) =
-            snapshot.child(field).value as? String
+            snapshot.get(field) as? String
+
+        fun timestampMillis(field: String): Long? {
+            return when (val value = snapshot.get(field)) {
+                is Timestamp -> value.toDate().time
+                is Number -> value.toLong()
+                else -> null
+            }
+        }
 
         val status = RequestStatus.entries.firstOrNull {
             it.name == text("status")
         } ?: return null
 
         return ServiceRequest(
-            id = snapshot.key ?: return null,
+            id = snapshot.id,
             listingId = text("listingId") ?: return null,
             listingTitle = text("listingTitle") ?: return null,
             customerId = text("customerId") ?: return null,
@@ -166,12 +219,8 @@ class RequestRepository(
             schedule = text("schedule") ?: return null,
             note = text("note") ?: return null,
             status = status,
-            createdAt = (
-                    snapshot.child("createdAt").value as? Number
-                    )?.toLong() ?: return null,
-            updatedAt = (
-                    snapshot.child("updatedAt").value as? Number
-                    )?.toLong() ?: return null
+            createdAt = timestampMillis("createdAt") ?: return null,
+            updatedAt = timestampMillis("updatedAt") ?: return null
         )
     }
 

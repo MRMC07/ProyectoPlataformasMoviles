@@ -52,7 +52,7 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun ProyectoPlataformasMovilesTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

@@ -25,6 +25,28 @@ class ModeloCuenta : ViewModel() {
             error = "Ingresá tu correo electrónico y contraseña."
             return
         }
+        if (crear) {
+            val dominiosInstitucionales = setOf(
+                "uvg.edu.gt",
+                "correoe.usac.edu.gt",
+                "mail.usac.edu.gt",
+                "miumg.edu.gt",
+                "galileo.edu",
+                "estudiante.udv.edu.gt",
+                "upana.edu.gt",
+                "unis.edu.gt",
+                "ufm.edu"
+            )
+
+            val dominio = correo.trim()
+                .substringAfterLast("@", "")
+                .lowercase()
+
+            if (dominio !in dominiosInstitucionales) {
+                error = "Usá tu correo institucional de estudiante."
+                return
+            }
+        }
         ocupado = true
         error = null
         val tarea = if (crear) autenticacion.createUserWithEmailAndPassword(correo.trim(), contrasena)

@@ -17,16 +17,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.proyectoplataformasmoviles.data.repository.ChatRepository
 import com.example.proyectoplataformasmoviles.data.repository.ProfileRepository
 import com.example.proyectoplataformasmoviles.data.repository.RequestRepository
 import com.example.proyectoplataformasmoviles.data.repository.ReviewRepository
 import com.example.proyectoplataformasmoviles.domain.repository.ListingRepository
 import com.example.proyectoplataformasmoviles.local.DraftRepository
 import com.example.proyectoplataformasmoviles.presentation.MyProductsViewModel
+import com.example.proyectoplataformasmoviles.presentation.chat.ChatViewModel
 import com.example.proyectoplataformasmoviles.presentation.detail.DetailViewModel
 import com.example.proyectoplataformasmoviles.presentation.home.HomeViewModel
 import com.example.proyectoplataformasmoviles.presentation.profile.ProfileViewModel
 import com.example.proyectoplataformasmoviles.presentation.publish.PublishViewModel
+import com.example.proyectoplataformasmoviles.screens.ChatScreen
+import com.example.proyectoplataformasmoviles.screens.ContactoConectado as ContactSummaryScreen
 import com.example.proyectoplataformasmoviles.screens.DetailScreen
 import com.example.proyectoplataformasmoviles.screens.EditListingRoute
 import com.example.proyectoplataformasmoviles.screens.GuestProfileScreen
@@ -37,19 +41,16 @@ import com.example.proyectoplataformasmoviles.screens.ListingReviews
 import com.example.proyectoplataformasmoviles.screens.ListingStatusControls
 import com.example.proyectoplataformasmoviles.screens.MyProductsScreen
 import com.example.proyectoplataformasmoviles.screens.NewRequestRoute
-import com.example.proyectoplataformasmoviles.screens.OnboardingScreen
 import com.example.proyectoplataformasmoviles.screens.ProfileRoute
 import com.example.proyectoplataformasmoviles.screens.PublishScreen
 import com.example.proyectoplataformasmoviles.screens.RegisterScreen
 import com.example.proyectoplataformasmoviles.screens.RequestsRoute
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
-import com.example.proyectoplataformasmoviles.presentation.PublishViewModel as DraftPublishViewModel
-import com.example.proyectoplataformasmoviles.screens.ContactoConectado as ContactSummaryScreen
 import com.example.proyectoplataformasmoviles.screens.borradores.PublishScreen as DraftPublishScreen
+import com.example.proyectoplataformasmoviles.presentation.PublishViewModel as DraftPublishViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 object Routes {
-    const val ONBOARDING = "onboarding"
     const val REGISTER = "register"
     const val HOME = "home"
     const val PUBLISH = "publish"
@@ -57,6 +58,7 @@ object Routes {
     const val DRAFTS = "drafts"
     const val NEW_DRAFT = "new_draft"
     const val REQUESTS = "requests"
+    const val CHAT = "chat/{requestId}"
     const val DETAIL = "detail/{listingId}"
     const val EDIT = "edit/{listingId}"
     const val ORDER = "order/{listingId}"
@@ -73,6 +75,10 @@ object Routes {
 
     fun order(listingId: String): String {
         return "order/${Uri.encode(listingId)}"
+    }
+
+    fun chat(requestId: String): String {
+        return "chat/${Uri.encode(requestId)}"
     }
 
     fun contact(
@@ -93,21 +99,26 @@ fun AppNavigation(
     homeViewModel: HomeViewModel,
     listingRepository: ListingRepository,
     draftRepository: DraftRepository,
-    profileRepository: ProfileRepository
+    profileRepository: ProfileRepository,
+    chatRepository: ChatRepository,
+    requestRepository: RequestRepository
 ) {
     val navController = rememberNavController()
     val authentication = FirebaseAuth.getInstance()
 
-    val reviewRepository = remember(authentication) {
-        ReviewRepository(
-            database = FirebaseDatabase.getInstance(),
-            authentication = authentication
-        )
+    val usuarioAutenticado = authentication.currentUser?.let { usuario ->
+        !usuario.isAnonymous && usuario.email != null
+    } == true
+
+    val destinoInicial = if (usuarioAutenticado) {
+        Routes.HOME
+    } else {
+        Routes.REGISTER
     }
 
-    val requestRepository = remember(authentication) {
-        RequestRepository(
-            database = FirebaseDatabase.getInstance(),
+    val reviewRepository = remember(authentication) {
+        ReviewRepository(
+            firestore = FirebaseFirestore.getInstance(),
             authentication = authentication
         )
     }
@@ -131,23 +142,8 @@ fun AppNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = Routes.ONBOARDING
+        startDestination = destinoInicial
     ) {
-        composable(Routes.ONBOARDING) {
-            OnboardingScreen(
-                onStartRegistration = {
-                    navController.navigate(Routes.REGISTER)
-                },
-                onExploreAsGuest = {
-                    navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.ONBOARDING) {
-                            inclusive = true
-                        }
-                    }
-                }
-            )
-        }
-
         composable(Routes.REGISTER) {
             RegisterScreen(
                 onRegisterSuccess = { name, role ->
@@ -156,53 +152,63 @@ fun AppNavigation(
                     currentUserRole = role
 
                     navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.ONBOARDING) {
+                        popUpTo(Routes.REGISTER) {
                             inclusive = true
                         }
                     }
                 },
                 onBackClick = {
                     navController.popBackStack()
-                }
+                },
+                mostrarRegresar = false
             )
         }
 
         composable(Routes.HOME) {
-            HomeScreen(
-                necesitaAcceso = authentication.currentUser
-                    ?.isAnonymous != false,
-                state = catalogState.copy(
-                    listings = activeListings
-                ),
-                userName = currentUserName,
-                userRole = currentUserRole,
-                onListingClick = { listingId ->
-                    navController.navigate(
-                        Routes.detail(listingId)
-                    )
-                },
-                onPublishClick = {
-                    if (
-                        authentication.currentUser
-                            ?.isAnonymous == false
-                    ) {
-                        navController.navigate(Routes.PUBLISH)
-                    } else {
-                        navController.navigate(Routes.REGISTER)
+            val usuario = authentication.currentUser
+
+            if (
+                usuario == null ||
+                usuario.isAnonymous ||
+                usuario.email == null
+            ) {
+                LaunchedEffect(usuario?.uid) {
+                    navController.navigate(Routes.REGISTER) {
+                        popUpTo(Routes.HOME) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
                     }
-                },
-                onProfileClick = {
-                    navController.navigate(Routes.PROFILE)
-                },
-                onRetryClick = homeViewModel::onRetryClick,
-                listingImageContent = { listing, imageModifier ->
-                    ListingImageView(
-                        listing = listing,
-                        repository = listingRepository,
-                        modifier = imageModifier
-                    )
                 }
-            )
+            } else {
+                HomeScreen(
+                    necesitaAcceso = false,
+                    state = catalogState.copy(
+                        listings = activeListings
+                    ),
+                    userName = currentUserName,
+                    userRole = currentUserRole,
+                    onListingClick = { listingId ->
+                        navController.navigate(
+                            Routes.detail(listingId)
+                        )
+                    },
+                    onPublishClick = {
+                        navController.navigate(Routes.PUBLISH)
+                    },
+                    onProfileClick = {
+                        navController.navigate(Routes.PROFILE)
+                    },
+                    onRetryClick = homeViewModel::onRetryClick,
+                    listingImageContent = { listing, imageModifier ->
+                        ListingImageView(
+                            listing = listing,
+                            repository = listingRepository,
+                            modifier = imageModifier
+                        )
+                    }
+                )
+            }
         }
 
         composable(
@@ -312,8 +318,56 @@ fun AppNavigation(
                 },
                 onSignInClick = {
                     navController.navigate(Routes.REGISTER)
+                },
+                onChatClick = { request ->
+                    navController.navigate(Routes.chat(request.id))
                 }
             )
+        }
+
+        composable(
+            route = Routes.CHAT,
+            arguments = listOf(
+                navArgument("requestId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val requestId = backStackEntry.arguments
+                ?.getString("requestId")
+                .orEmpty()
+
+            val user = authentication.currentUser?.takeUnless {
+                it.isAnonymous || it.email == null
+            }
+
+            if (user == null) {
+                LaunchedEffect(requestId) {
+                    navController.popBackStack()
+                    navController.navigate(Routes.REGISTER)
+                }
+            } else {
+                val chatViewModel: ChatViewModel = viewModel(
+                    key = "chat:${user.uid}:$requestId",
+                    factory = viewModelFactory {
+                        initializer {
+                            ChatViewModel(
+                                repository = chatRepository,
+                                userId = user.uid,
+                                requestId = requestId
+                            )
+                        }
+                    }
+                )
+
+                ChatScreen(
+                    viewModel = chatViewModel,
+                    userId = user.uid,
+                    onVolver = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
 
         composable(
@@ -527,8 +581,7 @@ fun AppNavigation(
                             ProfileViewModel(
                                 repository = profileRepository,
                                 userId = user.uid,
-                                initialName =
-                                    user.displayName.orEmpty()
+                                initialName = user.displayName.orEmpty()
                             )
                         }
                     }
@@ -557,7 +610,7 @@ fun AppNavigation(
                         currentUserName = "Visitante"
                         currentUserRole = "Estudiante"
 
-                        navController.navigate(Routes.ONBOARDING) {
+                        navController.navigate(Routes.REGISTER) {
                             popUpTo(0) {
                                 inclusive = true
                             }

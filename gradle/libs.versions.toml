@@ -16,7 +16,6 @@ ksp = "2.3.6"
 [libraries]
 firebase-bom = { module = "com.google.firebase:firebase-bom", version = "34.19.0" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
-firebase-database = { module = "com.google.firebase:firebase-database" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version = "1.10.2" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -38,6 +37,7 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
 
 [plugins]
 google-services = { id = "com.google.gms.google-services", version = "4.4.3" }

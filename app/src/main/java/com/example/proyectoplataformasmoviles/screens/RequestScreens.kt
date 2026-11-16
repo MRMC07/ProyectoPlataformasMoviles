@@ -255,7 +255,8 @@ fun NewRequestRoute(
 fun RequestsRoute(
     repository: RequestRepository,
     onBackClick: () -> Unit,
-    onSignInClick: () -> Unit
+    onSignInClick: () -> Unit,
+    onChatClick: (ServiceRequest) -> Unit = {}
 ) {
     val userId = currentRequestUserId()
 
@@ -387,7 +388,9 @@ fun RequestsRoute(
                 items = visibleRequests,
                 key = { it.id }
             ) { request ->
-                Card(
+                Card(onClick = {
+                    onChatClick(request)
+                },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(

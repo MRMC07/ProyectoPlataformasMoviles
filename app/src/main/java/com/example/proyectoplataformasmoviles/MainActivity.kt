@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val appContainer by lazy {
-        AppContainer()
+        AppContainer(applicationContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +57,10 @@ class MainActivity : ComponentActivity() {
                     homeViewModel = homeViewModel,
                     listingRepository = appContainer.listingRepository,
                     draftRepository = draftRepository,
-                    profileRepository = appContainer.profileRepository
+                    profileRepository = appContainer.profileRepository,
+                    requestRepository = appContainer.requestRepository,
+                    chatRepository = appContainer.chatRepository
+
                 )
             }
         }
