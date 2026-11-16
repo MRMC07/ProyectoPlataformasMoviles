@@ -43,18 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyectoplataformasmoviles.domain.model.Listing
 import com.example.proyectoplataformasmoviles.ui.theme.Spacing
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBackground
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSurface
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextMuted
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextSecondary
 import java.util.Locale
 
 data class UserReview(
@@ -88,7 +76,7 @@ fun ProfileScreen(
 
     Scaffold(
         modifier = modifier,
-        containerColor = UvgBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { contentPadding ->
         LazyColumn(
             modifier = Modifier
@@ -101,8 +89,8 @@ fun ProfileScreen(
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = UvgSurface,
-                    border = BorderStroke(1.dp, UvgBorder)
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
                         modifier = Modifier
@@ -117,7 +105,7 @@ fun ProfileScreen(
                         TextButton(
                             onClick = onBackClick,
                             colors = ButtonDefaults.textButtonColors(
-                                contentColor = UvgGreenPrimary
+                                contentColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
                             Text(
@@ -161,10 +149,10 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(Spacing.AvatarSizeLarge)
                             .clip(CircleShape)
-                            .background(UvgGreenLight)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
                             .border(
                                 width = 2.dp,
-                                color = UvgGreenPrimary,
+                                color = MaterialTheme.colorScheme.primary,
                                 shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
@@ -180,12 +168,12 @@ fun ProfileScreen(
                         text = userName,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = UvgTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
                     )
 
                     Surface(
-                        color = UvgGreenLight,
+                        color = MaterialTheme.colorScheme.primaryContainer,
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Text(
@@ -196,13 +184,13 @@ fun ProfileScreen(
                             ),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = UvgGreenDark,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             textAlign = TextAlign.Center
                         )
                     }
 
                     Surface(
-                        color = UvgGoldLight,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         val ratingText = if (reviews.isNotEmpty()) {
@@ -229,7 +217,7 @@ fun ProfileScreen(
                             ),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = UvgGoldDark,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -237,7 +225,7 @@ fun ProfileScreen(
                     Text(
                         text = userUniversity,
                         fontSize = 13.sp,
-                        color = UvgTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
 
@@ -245,7 +233,7 @@ fun ProfileScreen(
                         Text(
                             text = description,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = UvgTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -261,8 +249,8 @@ fun ProfileScreen(
                         onClick = onPublishClick,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = UvgGreenPrimary,
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         shape = RoundedCornerShape(
                             Spacing.CornerMedium
@@ -314,20 +302,20 @@ fun ProfileScreen(
                             Text(
                                 text = "Sin publicaciones",
                                 fontWeight = FontWeight.Bold,
-                                color = UvgTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center
                             )
 
                             Text(
                                 text = "Aún no has registrado productos o servicios con esta cuenta.",
-                                color = UvgTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
 
                             Button(
                                 onClick = onPublishClick,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = UvgGreenPrimary
+                                    containerColor = MaterialTheme.colorScheme.primary
                                 )
                             ) {
                                 Text("Crear mi primera publicación")
@@ -353,13 +341,13 @@ fun ProfileScreen(
                                 .clickable {
                                     onListingClick(listing.id)
                                 },
-                            color = UvgSurface,
+                            color = MaterialTheme.colorScheme.surface,
                             shape = RoundedCornerShape(
                                 Spacing.CornerMedium
                             ),
                             border = BorderStroke(
                                 1.dp,
-                                UvgBorder
+                                MaterialTheme.colorScheme.outline
                             )
                         ) {
                             Row(
@@ -376,7 +364,7 @@ fun ProfileScreen(
                                                 10.dp
                                             )
                                         )
-                                        .background(UvgGreenLight),
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -398,7 +386,7 @@ fun ProfileScreen(
                                         text = listing.title,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
-                                        color = UvgTextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -406,7 +394,7 @@ fun ProfileScreen(
                                     Text(
                                         text = "${listing.category} · ${listing.deliveryMode}",
                                         fontSize = 11.sp,
-                                        color = UvgTextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
 
                                     Text(
@@ -418,9 +406,9 @@ fun ProfileScreen(
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (listing.isActive) {
-                                            UvgGreenDark
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         } else {
-                                            UvgTextSecondary
+                                            MaterialTheme.colorScheme.onSurfaceVariant
                                         }
                                     )
                                 }
@@ -441,7 +429,7 @@ fun ProfileScreen(
                                     }",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
-                                    color = UvgGreenDark
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
@@ -456,12 +444,12 @@ fun ProfileScreen(
                             Text(
                                 text = "Reseñas pendientes",
                                 fontWeight = FontWeight.Bold,
-                                color = UvgTextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
                             Text(
                                 text = "La función de reseñas todavía no está disponible.",
-                                color = UvgTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -477,13 +465,13 @@ fun ProfileScreen(
                                     text = review.author,
                                     modifier = Modifier.weight(1f),
                                     fontWeight = FontWeight.Bold,
-                                    color = UvgTextPrimary
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
 
                                 Text(
                                     text = review.date,
                                     fontSize = 11.sp,
-                                    color = UvgTextMuted
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
@@ -491,7 +479,7 @@ fun ProfileScreen(
                                 repeat(review.rating.coerceIn(0, 5)) {
                                     Text(
                                         text = "★",
-                                        color = UvgGoldPrimary,
+                                        color = MaterialTheme.colorScheme.secondary,
                                         fontSize = 16.sp
                                     )
                                 }
@@ -500,7 +488,7 @@ fun ProfileScreen(
                             Text(
                                 text = review.comment,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = UvgTextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -527,9 +515,9 @@ private fun ProfileSectionCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Large),
-        color = UvgSurface,
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(Spacing.CornerLarge),
-        border = BorderStroke(1.dp, UvgBorder)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier
@@ -560,9 +548,9 @@ private fun ProfileTabPill(
             )
             .clickable(onClick = onClick),
         color = if (isSelected) {
-            UvgGreenPrimary
+            MaterialTheme.colorScheme.primary
         } else {
-            UvgSurface
+            MaterialTheme.colorScheme.surface
         },
         shape = RoundedCornerShape(
             Spacing.CornerMedium
@@ -570,9 +558,9 @@ private fun ProfileTabPill(
         border = BorderStroke(
             width = 1.dp,
             color = if (isSelected) {
-                UvgGreenPrimary
+                MaterialTheme.colorScheme.primary
             } else {
-                UvgBorder
+                MaterialTheme.colorScheme.outline
             }
         )
     ) {
@@ -589,11 +577,12 @@ private fun ProfileTabPill(
                 FontWeight.Medium
             },
             color = if (isSelected) {
-                Color.White
+                MaterialTheme.colorScheme.onPrimary
             } else {
-                UvgTextSecondary
+                MaterialTheme.colorScheme.onSurfaceVariant
             },
             textAlign = TextAlign.Center
         )
     }
 }
+

@@ -43,17 +43,6 @@ import androidx.compose.ui.unit.sp
 import com.example.proyectoplataformasmoviles.domain.model.Listing
 import com.example.proyectoplataformasmoviles.domain.model.defaultUvgListings
 import com.example.proyectoplataformasmoviles.ui.theme.Spacing
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBackground
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSurface
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextSecondary
 import java.util.Locale
 
 @Composable
@@ -69,7 +58,7 @@ fun ServiceOrderScreen(
     if (listing == null) {
         // Manejo explícito sin sustituciones ficticias
         Scaffold(
-            containerColor = UvgBackground,
+            containerColor = MaterialTheme.colorScheme.background,
             modifier = modifier
         ) { innerPadding ->
             Box(
@@ -80,9 +69,9 @@ fun ServiceOrderScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
-                    color = UvgSurface,
+                    color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(Spacing.CornerLarge),
-                    border = BorderStroke(1.dp, UvgBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -95,16 +84,16 @@ fun ServiceOrderScreen(
                             text = "Publicación no encontrada",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = UvgTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "No se pudo cargar la información para configurar la orden.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = UvgTextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Button(
                             onClick = onBackClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = UvgGreenPrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(Spacing.CornerMedium)
                         ) {
                             Text("← Volver al catálogo")
@@ -132,12 +121,12 @@ fun ServiceOrderScreen(
     )
 
     Scaffold(
-        containerColor = UvgBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier,
         bottomBar = {
             Surface(
-                color = UvgSurface,
-                border = BorderStroke(1.dp, UvgBorder),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 shadowElevation = 4.dp
             ) {
                 Row(
@@ -148,14 +137,14 @@ fun ServiceOrderScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Total a acordar", fontSize = 11.sp, color = UvgTextSecondary)
+                        Text("Total a acordar", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("Q", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = UvgGreenDark)
+                            Text("Q", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             Text(
                                 text = String.format(Locale.US, "%.2f", listing.price),
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = UvgGreenDark
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -166,7 +155,7 @@ fun ServiceOrderScreen(
                         },
                         modifier = Modifier.height(Spacing.MinTouchTarget),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = UvgGreenPrimary,
+                            containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(Spacing.CornerMedium)
@@ -197,20 +186,20 @@ fun ServiceOrderScreen(
             ) {
                 TextButton(
                     onClick = onBackClick,
-                    colors = ButtonDefaults.textButtonColors(contentColor = UvgGreenPrimary)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("← Cambiar servicio", fontWeight = FontWeight.SemiBold)
                 }
 
                 Surface(
-                    color = UvgGreenLight,
+                    color = MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text(
                         text = "Configuración de Solicitud",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = UvgGreenDark,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = Spacing.Small, vertical = 4.dp)
                     )
                 }
@@ -222,12 +211,12 @@ fun ServiceOrderScreen(
                     text = "Prepará tu consulta",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "Proponé una modalidad y un horario para consultar al emprendedor por correo.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = UvgTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 20.sp
                 )
             }
@@ -235,9 +224,9 @@ fun ServiceOrderScreen(
             // Tarjeta Resumen
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = UvgSurface,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(Spacing.CornerLarge),
-                border = BorderStroke(1.dp, UvgBorder)
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Row(
                     modifier = Modifier.padding(Spacing.Medium),
@@ -247,7 +236,7 @@ fun ServiceOrderScreen(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(Spacing.CornerMedium))
-                            .background(UvgGreenLight),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text("🤝", fontSize = 24.sp)
@@ -260,13 +249,13 @@ fun ServiceOrderScreen(
                             text = listing.title,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
-                            color = UvgTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Por ${listing.sellerName} • ${listing.faculty}",
                             fontSize = 12.sp,
-                            color = UvgTextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -274,7 +263,7 @@ fun ServiceOrderScreen(
                         text = "Q${String.format(Locale.US, "%.2f", listing.price)}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = UvgGreenDark
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -285,7 +274,7 @@ fun ServiceOrderScreen(
                     text = "1. Modalidad de entrega o sesión",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Row(
@@ -318,7 +307,7 @@ fun ServiceOrderScreen(
                     text = "2. Horario sugerido para coordinar",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -329,11 +318,11 @@ fun ServiceOrderScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(Spacing.CornerMedium))
                                 .clickable { selectedSchedule = scheduleText },
-                            color = if (isSelected) UvgGreenLight else UvgSurface,
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                             shape = RoundedCornerShape(Spacing.CornerMedium),
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = if (isSelected) UvgGreenPrimary else UvgBorder
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                             )
                         ) {
                             Row(
@@ -346,17 +335,17 @@ fun ServiceOrderScreen(
                                         .clip(CircleShape)
                                         .border(
                                             width = 1.5.dp,
-                                            color = if (isSelected) UvgGreenPrimary else UvgBorder,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                                             shape = CircleShape
                                         )
-                                        .background(if (isSelected) UvgGreenPrimary else Color.Transparent)
+                                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
                                     text = scheduleText,
                                     fontSize = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (isSelected) UvgGreenDark else UvgTextPrimary
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -370,7 +359,7 @@ fun ServiceOrderScreen(
                     text = "3. Mensaje inicial para el emprendedor",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(
@@ -381,10 +370,10 @@ fun ServiceOrderScreen(
                         .height(110.dp),
                     shape = RoundedCornerShape(Spacing.CornerMedium),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = UvgGreenPrimary,
-                        unfocusedBorderColor = UvgBorder,
-                        focusedContainerColor = UvgSurface,
-                        unfocusedContainerColor = UvgSurface
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     )
                 )
             }
@@ -392,9 +381,9 @@ fun ServiceOrderScreen(
             // Nota de transparencia sobre estado local
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = UvgGoldLight,
+                color = MaterialTheme.colorScheme.secondaryContainer,
                 shape = RoundedCornerShape(Spacing.CornerMedium),
-                border = BorderStroke(1.dp, UvgGoldDark.copy(alpha = 0.2f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier.padding(14.dp),
@@ -407,12 +396,12 @@ fun ServiceOrderScreen(
                             text = "Consulta sin compromiso",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = UvgGoldDark
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         Text(
                             text = "En el siguiente paso podrás revisar estos datos y abrir tu aplicación de correo para enviarlos. No se confirma una compra.",
                             fontSize = 11.sp,
-                            color = UvgTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
                         )
                     }
@@ -437,11 +426,11 @@ private fun ModalityOptionCard(
         modifier = modifier
             .clip(RoundedCornerShape(Spacing.CornerMedium))
             .clickable(onClick = onClick),
-        color = if (isSelected) UvgGreenLight else UvgSurface,
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(Spacing.CornerMedium),
         border = BorderStroke(
             width = if (isSelected) 1.5.dp else 1.dp,
-            color = if (isSelected) UvgGreenPrimary else UvgBorder
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
         )
     ) {
         Column(
@@ -453,13 +442,14 @@ private fun ModalityOptionCard(
                 text = title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
-                color = if (isSelected) UvgGreenDark else UvgTextPrimary
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = subtitle,
                 fontSize = 11.sp,
-                color = UvgTextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
+

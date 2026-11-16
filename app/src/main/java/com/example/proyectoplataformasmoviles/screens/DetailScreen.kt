@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,19 +43,6 @@ import coil3.compose.AsyncImage
 import com.example.proyectoplataformasmoviles.domain.model.Listing
 import com.example.proyectoplataformasmoviles.presentation.detail.DetailUiState
 import com.example.proyectoplataformasmoviles.ui.theme.Spacing
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBackground
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSuccess
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSurface
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextSecondary
 import java.util.Locale
 
 @Composable
@@ -75,20 +66,22 @@ fun DetailScreen(
     reviewContent: @Composable () -> Unit = {}
 ) {
     val listing: Listing? = state.listing
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
     Scaffold(
-        containerColor = UvgBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier,
         bottomBar = {
             if (
+                !keyboardVisible &&
                 listing != null &&
                 !state.isLoading &&
                 state.errorMessage == null &&
                 (canEdit || listing.isActive)
             ) {
                 Surface(
-                    color = UvgSurface,
-                    border = BorderStroke(1.dp, UvgBorder),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     shadowElevation = 4.dp
                 ) {
                     Row(
@@ -105,7 +98,7 @@ fun DetailScreen(
                             Text(
                                 text = "Precio del servicio",
                                 fontSize = 11.sp,
-                                color = UvgTextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             Row(
@@ -115,7 +108,7 @@ fun DetailScreen(
                                     text = "Q",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = UvgGreenDark
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
 
                                 Text(
@@ -126,7 +119,7 @@ fun DetailScreen(
                                     ),
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = UvgGreenDark
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
 
                                 Text(
@@ -141,7 +134,7 @@ fun DetailScreen(
                                         ""
                                     },
                                     fontSize = 12.sp,
-                                    color = UvgTextSecondary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -156,8 +149,8 @@ fun DetailScreen(
                                 Spacing.MinTouchTarget
                             ),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = UvgGreenPrimary,
-                                contentColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             shape = RoundedCornerShape(
                                 Spacing.CornerMedium
@@ -182,11 +175,12 @@ fun DetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
         ) {
             Surface(
-                color = UvgSurface,
-                border = BorderStroke(1.dp, UvgBorder),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -202,7 +196,7 @@ fun DetailScreen(
                     TextButton(
                         onClick = onBackClick,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = UvgGreenPrimary
+                            contentColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
                         Text(
@@ -212,7 +206,7 @@ fun DetailScreen(
                     }
 
                     Surface(
-                        color = UvgGreenLight,
+                        color = MaterialTheme.colorScheme.primaryContainer,
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Text(
@@ -223,7 +217,7 @@ fun DetailScreen(
                             ),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = UvgGreenDark
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
@@ -252,13 +246,13 @@ fun DetailScreen(
                             )
                         ) {
                             CircularProgressIndicator(
-                                color = UvgGreenPrimary
+                                color = MaterialTheme.colorScheme.primary
                             )
 
                             Text(
                                 text = "Cargando publicación...",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = UvgTextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -269,7 +263,7 @@ fun DetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(Spacing.Large),
-                        color = UvgSurface,
+                        color = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(
                             Spacing.CornerLarge
                         ),
@@ -302,7 +296,7 @@ fun DetailScreen(
                             Button(
                                 onClick = onRetryClick,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = UvgGreenPrimary
+                                    containerColor = MaterialTheme.colorScheme.primary
                                 ),
                                 shape = RoundedCornerShape(
                                     Spacing.CornerMedium
@@ -319,11 +313,11 @@ fun DetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(Spacing.Large),
-                        color = UvgSurface,
+                        color = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(
                             Spacing.CornerLarge
                         ),
-                        border = BorderStroke(1.dp, UvgBorder)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(
                             modifier = Modifier
@@ -343,13 +337,13 @@ fun DetailScreen(
                                 text = "Publicación no disponible",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = UvgTextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
                             Text(
                                 text = "No se pudo encontrar la publicación solicitada.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = UvgTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 18.sp
                             )
 
@@ -362,7 +356,7 @@ fun DetailScreen(
                             Button(
                                 onClick = onBackClick,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = UvgGreenPrimary
+                                    containerColor = MaterialTheme.colorScheme.primary
                                 ),
                                 shape = RoundedCornerShape(
                                     Spacing.CornerMedium
@@ -383,7 +377,7 @@ fun DetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(210.dp)
-                                .background(UvgGreenLight)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
                         ) {
                             listingImageContent(
                                 listing,
@@ -391,7 +385,7 @@ fun DetailScreen(
                             )
 
                             Surface(
-                                color = UvgGreenDark.copy(
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
                                     alpha = 0.85f
                                 ),
                                 shape = RoundedCornerShape(
@@ -407,7 +401,7 @@ fun DetailScreen(
                                         horizontal = 10.dp,
                                         vertical = 4.dp
                                     ),
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -432,7 +426,7 @@ fun DetailScreen(
                                 text = listing.title,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = UvgTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 30.sp
                             )
 
@@ -443,13 +437,13 @@ fun DetailScreen(
                                 )
                             ) {
                                 Surface(
-                                    color = UvgGoldLight,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
                                     shape = RoundedCornerShape(
                                         Spacing.CornerSmall
                                     ),
                                     border = BorderStroke(
                                         1.dp,
-                                        UvgGoldDark.copy(alpha = 0.2f)
+                                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f)
                                     )
                                 ) {
                                     Row(
@@ -461,7 +455,7 @@ fun DetailScreen(
                                     ) {
                                         Text(
                                             text = "★",
-                                            color = UvgGoldPrimary,
+                                            color = MaterialTheme.colorScheme.secondary,
                                             fontSize = 13.sp
                                         )
 
@@ -477,13 +471,13 @@ fun DetailScreen(
                                             ),
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
-                                            color = UvgGoldDark
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
                                         )
 
                                         Text(
                                             text = " (${listing.reviewCount})",
                                             fontSize = 11.sp,
-                                            color = UvgTextSecondary
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -492,7 +486,7 @@ fun DetailScreen(
                                     listing.turnaroundTime.isNotBlank()
                                 ) {
                                     Surface(
-                                        color = UvgGreenLight,
+                                        color = MaterialTheme.colorScheme.primaryContainer,
                                         shape = RoundedCornerShape(
                                             Spacing.CornerSmall
                                         )
@@ -505,7 +499,7 @@ fun DetailScreen(
                                             ),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = UvgGreenDark
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
                                     }
                                 }
@@ -514,11 +508,11 @@ fun DetailScreen(
 
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            color = UvgSurface,
+                            color = MaterialTheme.colorScheme.surface,
                             shape = RoundedCornerShape(
                                 Spacing.CornerLarge
                             ),
-                            border = BorderStroke(1.dp, UvgBorder)
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
                             Row(
                                 modifier = Modifier.padding(14.dp),
@@ -528,10 +522,10 @@ fun DetailScreen(
                                     modifier = Modifier
                                         .size(50.dp)
                                         .clip(CircleShape)
-                                        .background(UvgGreenLight)
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
                                         .border(
                                             width = 1.dp,
-                                            color = UvgGreenBorder,
+                                            color = MaterialTheme.colorScheme.outlineVariant,
                                             shape = CircleShape
                                         ),
                                     contentAlignment = Alignment.Center
@@ -543,7 +537,7 @@ fun DetailScreen(
                                             ?: "E",
                                         fontSize = 22.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = UvgGreenDark
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
 
@@ -560,20 +554,20 @@ fun DetailScreen(
                                         text = listing.sellerName,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp,
-                                        color = UvgTextPrimary
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
 
                                     Text(
                                         text = listing.faculty,
                                         fontSize = 12.sp,
-                                        color = UvgTextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
 
                                     Text(
                                         text = "Parte de la comunidad Nexora",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = UvgGreenPrimary
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
@@ -588,13 +582,13 @@ fun DetailScreen(
                                 text = "Descripción del servicio",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = UvgTextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
                             Text(
                                 text = listing.description,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = UvgTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 22.sp
                             )
                         }
@@ -602,13 +596,13 @@ fun DetailScreen(
                         if (listing.includes.isNotEmpty()) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
-                                color = UvgSurface,
+                                color = MaterialTheme.colorScheme.surface,
                                 shape = RoundedCornerShape(
                                     Spacing.CornerLarge
                                 ),
                                 border = BorderStroke(
                                     1.dp,
-                                    UvgBorder
+                                    MaterialTheme.colorScheme.outline
                                 )
                             ) {
                                 Column(
@@ -623,7 +617,7 @@ fun DetailScreen(
                                         text = "¿Qué incluye este servicio?",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
-                                        color = UvgTextPrimary
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
 
                                     listing.includes.forEach { includedItem ->
@@ -632,7 +626,7 @@ fun DetailScreen(
                                         ) {
                                             Text(
                                                 text = "✓",
-                                                color = UvgSuccess,
+                                                color = MaterialTheme.colorScheme.tertiary,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp
                                             )
@@ -646,7 +640,7 @@ fun DetailScreen(
                                             Text(
                                                 text = includedItem,
                                                 fontSize = 13.sp,
-                                                color = UvgTextSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 lineHeight = 18.sp
                                             )
                                         }
@@ -657,13 +651,13 @@ fun DetailScreen(
 
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            color = UvgGreenLight,
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             shape = RoundedCornerShape(
                                 Spacing.CornerLarge
                             ),
                             border = BorderStroke(
                                 1.dp,
-                                UvgGreenBorder
+                                MaterialTheme.colorScheme.outlineVariant
                             )
                         ) {
                             Row(
@@ -684,13 +678,13 @@ fun DetailScreen(
                                         text = "Modalidad y lugar de atención",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
-                                        color = UvgGreenDark
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
 
                                     Text(
                                         text = "${listing.deliveryMode} • Consultá los detalles con quien publica.",
                                         fontSize = 12.sp,
-                                        color = UvgTextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -709,3 +703,4 @@ fun DetailScreen(
         }
     }
 }
+

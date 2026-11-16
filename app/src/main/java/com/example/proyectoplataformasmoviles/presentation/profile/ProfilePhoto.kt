@@ -37,6 +37,7 @@ fun prepareProfilePhoto(
     } else {
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
+            inSampleSize = 1
         }
 
         contentResolver.openInputStream(uri).use { inputStream ->

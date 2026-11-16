@@ -49,19 +49,6 @@ import androidx.compose.ui.unit.sp
 import com.example.proyectoplataformasmoviles.domain.model.Listing
 import com.example.proyectoplataformasmoviles.domain.model.defaultUvgListings
 import com.example.proyectoplataformasmoviles.ui.theme.Spacing
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBackground
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSuccess
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSurface
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextMuted
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextSecondary
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -90,7 +77,7 @@ fun ContactScreen(
     if (listing == null) {
         // Manejo explícito sin sustituciones ficticias
         Scaffold(
-            containerColor = UvgBackground,
+            containerColor = MaterialTheme.colorScheme.background,
             modifier = modifier
         ) { innerPadding ->
             Box(
@@ -101,9 +88,9 @@ fun ContactScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
-                    color = UvgSurface,
+                    color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(Spacing.CornerLarge),
-                    border = BorderStroke(1.dp, UvgBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -116,17 +103,17 @@ fun ContactScreen(
                             text = "Publicación no encontrada",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = UvgTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "No se puede iniciar el chat porque el servicio no está disponible.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = UvgTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                         Button(
                             onClick = onBackClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = UvgGreenPrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(Spacing.CornerMedium)
                         ) {
                             Text("← Volver al catálogo")
@@ -218,7 +205,7 @@ fun ContactScreen(
     }
 
     Scaffold(
-        containerColor = UvgBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier
     ) { innerPadding ->
         Column(
@@ -228,8 +215,8 @@ fun ContactScreen(
         ) {
             // 1. Header del Emprendedor (Pizarrón: "Chat E./C. X")
             Surface(
-                color = UvgSurface,
-                border = BorderStroke(1.dp, UvgBorder),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -240,7 +227,7 @@ fun ContactScreen(
                 ) {
                     TextButton(
                         onClick = onBackClick,
-                        colors = ButtonDefaults.textButtonColors(contentColor = UvgGreenPrimary)
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Text("←", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
@@ -251,15 +238,15 @@ fun ContactScreen(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(UvgGreenLight)
-                            .border(1.dp, UvgGreenBorder, CircleShape),
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = listing.sellerName.firstOrNull()?.uppercase() ?: "E",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = UvgGreenDark
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
 
@@ -271,33 +258,33 @@ fun ContactScreen(
                                 text = listing.sellerName,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
-                                color = UvgTextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("✓", color = UvgSuccess, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("✓", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                         Text(
                             text = "En línea • ${listing.faculty}",
                             fontSize = 11.sp,
-                            color = UvgGreenPrimary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium
                         )
                     }
 
                     // Badge de Estado del Trato
                     Surface(
-                        color = if (isDealConfirmed) UvgGreenLight else UvgGoldLight,
+                        color = if (isDealConfirmed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                         shape = RoundedCornerShape(10.dp),
                         border = BorderStroke(
                             1.dp,
-                            if (isDealConfirmed) UvgGreenBorder else UvgGoldDark.copy(alpha = 0.2f)
+                            if (isDealConfirmed) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f)
                         )
                     ) {
                         Text(
                             text = if (isDealConfirmed) "✅ Acuerdo local" else "🟡 En negociación",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isDealConfirmed) UvgGreenDark else UvgGoldDark,
+                            color = if (isDealConfirmed) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.padding(horizontal = Spacing.Small, vertical = 4.dp)
                         )
                     }
@@ -309,9 +296,9 @@ fun ContactScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-                color = UvgSurface,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(Spacing.CornerMedium),
-                border = BorderStroke(1.dp, UvgBorder)
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -321,7 +308,7 @@ fun ContactScreen(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(Spacing.CornerSmall))
-                            .background(UvgGreenLight),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text("🤝", fontSize = 18.sp)
@@ -334,13 +321,13 @@ fun ContactScreen(
                             text = listing.title,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = UvgTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
                         Text(
                             text = "Q${String.format(Locale.US, "%.2f", listing.price)} • $modality",
                             fontSize = 11.sp,
-                            color = UvgGreenDark,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -349,7 +336,7 @@ fun ContactScreen(
                         Button(
                             onClick = { confirmDeal() },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = UvgGreenPrimary,
+                                containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(Spacing.CornerSmall),
@@ -361,7 +348,7 @@ fun ContactScreen(
                         Button(
                             onClick = { showReviewDialog = true },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = UvgGoldDark,
+                                containerColor = MaterialTheme.colorScheme.onSecondaryContainer,
                                 contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(Spacing.CornerSmall),
@@ -378,14 +365,14 @@ fun ContactScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.Medium, vertical = 2.dp),
-                color = UvgGoldLight.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(Spacing.CornerSmall),
-                border = BorderStroke(1.dp, UvgGoldDark.copy(alpha = 0.15f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.15f))
             ) {
                 Text(
                     text = "ℹ️ Vista preliminar: Mensajes y acuerdos actuales se gestionan en memoria local hasta la sincronización definitiva con el servidor.",
                     fontSize = 10.sp,
-                    color = UvgGoldDark,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     lineHeight = 14.sp
                 )
@@ -410,18 +397,18 @@ fun ContactScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp),
-                            color = if (message.text.contains("acuerdo")) UvgGreenLight else UvgGoldLight,
+                            color = if (message.text.contains("acuerdo")) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                             shape = RoundedCornerShape(Spacing.CornerMedium),
                             border = BorderStroke(
                                 1.dp,
-                                if (message.text.contains("acuerdo")) UvgGreenBorder else UvgGoldDark.copy(alpha = 0.2f)
+                                if (message.text.contains("acuerdo")) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f)
                             )
                         ) {
                             Text(
                                 text = message.text,
                                 modifier = Modifier.padding(12.dp),
                                 fontSize = 12.sp,
-                                color = if (message.text.contains("acuerdo")) UvgGreenDark else UvgGoldDark,
+                                color = if (message.text.contains("acuerdo")) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                                 lineHeight = 17.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -455,14 +442,14 @@ fun ContactScreen(
                                     sendMessage(chipText)
                                 }
                             },
-                        color = UvgSurface,
+                        color = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(Spacing.CornerLarge),
-                        border = BorderStroke(1.dp, UvgBorder)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Text(
                             text = chipText,
                             fontSize = 12.sp,
-                            color = UvgTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
@@ -472,8 +459,8 @@ fun ContactScreen(
 
             // 5. Compositor de Mensajes
             Surface(
-                color = UvgSurface,
-                border = BorderStroke(1.dp, UvgBorder),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -485,15 +472,15 @@ fun ContactScreen(
                     OutlinedTextField(
                         value = draftMessage,
                         onValueChange = { draftMessage = it },
-                        placeholder = { Text("Escribe un mensaje al emprendedor...", fontSize = 13.sp, color = UvgTextMuted) },
+                        placeholder = { Text("Escribe un mensaje al emprendedor...", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         shape = RoundedCornerShape(Spacing.CornerPill),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = UvgGreenPrimary,
-                            unfocusedBorderColor = UvgBorder,
-                            focusedContainerColor = UvgBackground,
-                            unfocusedContainerColor = UvgBackground
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background
                         )
                     )
 
@@ -503,8 +490,8 @@ fun ContactScreen(
                         onClick = { sendMessage(draftMessage) },
                         enabled = draftMessage.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = UvgGreenPrimary,
-                            disabledContainerColor = UvgGreenPrimary.copy(alpha = 0.3f),
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                             contentColor = Color.White
                         ),
                         shape = CircleShape,
@@ -557,7 +544,7 @@ private fun ChatBubbleRow(message: ChatMessageItem) {
             modifier = Modifier.fillMaxWidth(0.82f)
         ) {
             Surface(
-                color = if (isMine) UvgGreenLight else UvgSurface,
+                color = if (isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(
                     topStart = 14.dp,
                     topEnd = 14.dp,
@@ -566,14 +553,14 @@ private fun ChatBubbleRow(message: ChatMessageItem) {
                 ),
                 border = BorderStroke(
                     1.dp,
-                    if (isMine) UvgGreenBorder else UvgBorder
+                    if (isMine) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outline
                 )
             ) {
                 Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                     Text(
                         text = message.text,
                         fontSize = 13.sp,
-                        color = if (isMine) UvgGreenDark else UvgTextPrimary,
+                        color = if (isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                         lineHeight = 18.sp
                     )
                 }
@@ -585,17 +572,18 @@ private fun ChatBubbleRow(message: ChatMessageItem) {
                 Text(
                     text = message.timestamp,
                     fontSize = 10.sp,
-                    color = UvgTextMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
                 if (message.isLocalDraft) {
                     Text(
                         text = "• Local",
                         fontSize = 9.sp,
-                        color = UvgTextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
     }
 }
+

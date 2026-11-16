@@ -51,10 +51,7 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun ProyectoPlataformasMovilesTheme(
-    // Las pantallas principales usan la paleta verde/blanca institucional.
-    // Mantenemos este tema claro como predeterminado para que los componentes
-    // Material (TextButton, campos y estados deshabilitados) coincidan con ella.
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

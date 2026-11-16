@@ -20,3 +20,4 @@ fun MarcaNexora(modifier: Modifier = Modifier) {
         Text("Nexora", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     }
 }
+

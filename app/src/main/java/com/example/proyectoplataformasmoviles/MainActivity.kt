@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
         )[HomeViewModel::class.java]
 
         setContent {
-            ProyectoPlataformasMovilesTheme {
+            ProyectoPlataformasMovilesTheme(darkTheme = true) {
                 AppNavigation(
                     homeViewModel = homeViewModel,
                     listingRepository = appContainer.listingRepository,

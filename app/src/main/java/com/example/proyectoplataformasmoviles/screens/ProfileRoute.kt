@@ -328,6 +328,7 @@ fun ProfileAvatar(
 
                 val options = BitmapFactory.Options().apply {
                     inJustDecodeBounds = true
+                    inSampleSize = 1
                 }
 
                 BitmapFactory.decodeByteArray(

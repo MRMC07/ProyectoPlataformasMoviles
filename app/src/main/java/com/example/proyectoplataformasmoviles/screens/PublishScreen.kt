@@ -47,18 +47,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyectoplataformasmoviles.presentation.publish.PublishUiState
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBackground
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSurface
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextMuted
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextSecondary
 
 @Composable
 fun PublishScreen(
@@ -88,10 +76,10 @@ fun PublishScreen(
     val canEdit = state.canEditForm
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = UvgGreenPrimary,
-        unfocusedBorderColor = UvgBorder,
-        focusedContainerColor = UvgSurface,
-        unfocusedContainerColor = UvgSurface
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        focusedContainerColor = MaterialTheme.colorScheme.surface,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surface
     )
 
     BackHandler(
@@ -99,15 +87,15 @@ fun PublishScreen(
     ) {}
 
     Scaffold(
-        containerColor = UvgBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier
     ) { contentPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
-                .verticalScroll(rememberScrollState())
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(
                     horizontal = 20.dp,
                     vertical = 16.dp
@@ -123,7 +111,7 @@ fun PublishScreen(
                     onClick = onBackClick,
                     enabled = canEdit,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = UvgGreenPrimary
+                        contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text(
@@ -133,7 +121,7 @@ fun PublishScreen(
                 }
 
                 Surface(
-                    color = UvgGoldLight,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text(
@@ -144,7 +132,7 @@ fun PublishScreen(
                         ),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = UvgGoldDark
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
@@ -160,7 +148,7 @@ fun PublishScreen(
                     },
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = UvgGreenDark
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Text(
@@ -170,7 +158,7 @@ fun PublishScreen(
                         "Ofrecé tus productos y servicios a estudiantes de todas las universidades de Guatemala."
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = UvgTextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -182,7 +170,7 @@ fun PublishScreen(
                 Text(
                     text = "Título de tu servicio o producto",
                     style = MaterialTheme.typography.labelLarge,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(
@@ -193,7 +181,7 @@ fun PublishScreen(
                     placeholder = {
                         Text(
                             text = "Ej. Tutoría de Álgebra Lineal y Cálculo II",
-                            color = UvgTextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     singleLine = true,
@@ -217,7 +205,7 @@ fun PublishScreen(
                 Text(
                     text = "Descripción del servicio",
                     style = MaterialTheme.typography.labelLarge,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(
@@ -228,7 +216,7 @@ fun PublishScreen(
                     placeholder = {
                         Text(
                             text = "Explicá qué incluye, la metodología o los temas que cubrís...",
-                            color = UvgTextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     minLines = 3,
@@ -253,7 +241,7 @@ fun PublishScreen(
                 Text(
                     text = "Precio en quetzales (Q)",
                     style = MaterialTheme.typography.labelLarge,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 OutlinedTextField(
@@ -265,13 +253,13 @@ fun PublishScreen(
                         Text(
                             text = "Q ",
                             fontWeight = FontWeight.Bold,
-                            color = UvgGreenDark
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     },
                     placeholder = {
                         Text(
                             text = "75.00",
-                            color = UvgTextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     singleLine = true,
@@ -302,7 +290,7 @@ fun PublishScreen(
                 Text(
                     text = "Categoría de servicio",
                     style = MaterialTheme.typography.labelLarge,
-                    color = UvgTextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Box {
@@ -312,11 +300,11 @@ fun PublishScreen(
                             .clickable(enabled = canEdit) {
                                 isCategoryMenuExpanded = true
                             },
-                        color = UvgSurface,
+                        color = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(
                             width = 1.dp,
-                            color = UvgBorder
+                            color = MaterialTheme.colorScheme.outline
                         )
                     ) {
                         Row(
@@ -335,9 +323,9 @@ fun PublishScreen(
                                 color = if (
                                     state.category.isNotBlank()
                                 ) {
-                                    UvgTextPrimary
+                                    MaterialTheme.colorScheme.onSurface
                                 } else {
-                                    UvgTextMuted
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                                 fontSize = 14.sp
                             )
@@ -345,7 +333,7 @@ fun PublishScreen(
                             Text(
                                 text = "▼",
                                 fontSize = 12.sp,
-                                color = UvgGreenPrimary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -386,11 +374,11 @@ fun PublishScreen(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = UvgGreenLight,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(
                     width = 1.dp,
-                    color = UvgGreenBorder
+                    color = MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Row(
@@ -409,7 +397,7 @@ fun PublishScreen(
                     Text(
                         text = "Tu publicación será visible para la comunidad de Nexora. Acordá con la otra persona un lugar de entrega o una modalidad virtual.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = UvgGreenDark,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         lineHeight = 16.sp
                     )
                 }
@@ -432,13 +420,13 @@ fun PublishScreen(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = UvgGreenPrimary
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     Text(
                         text = "Guardando publicación en Nexora...",
                         fontSize = 13.sp,
-                        color = UvgTextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -450,10 +438,10 @@ fun PublishScreen(
                     .fillMaxWidth()
                     .height(52.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = UvgGreenPrimary,
-                    disabledContainerColor = UvgGreenPrimary.copy(alpha = 0.55f),
-                    contentColor = Color.White,
-                    disabledContentColor = Color.White.copy(alpha = 0.9f)
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                 ),
                 shape = RoundedCornerShape(14.dp)
             ) {
@@ -474,3 +462,4 @@ fun PublishScreen(
         }
     }
 }
+

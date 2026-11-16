@@ -33,17 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.proyectoplataformasmoviles.ui.theme.Spacing
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBackground
-import com.example.proyectoplataformasmoviles.ui.theme.UvgBorder
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldLight
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGoldPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenDark
-import com.example.proyectoplataformasmoviles.ui.theme.UvgGreenPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgSurface
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextMuted
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextPrimary
-import com.example.proyectoplataformasmoviles.ui.theme.UvgTextSecondary
 
 /**
  * Pantalla / Diálogo de Reseña (Boceto "C: Reseña" del pizarrón):
@@ -67,7 +56,7 @@ fun ReviewDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        containerColor = UvgSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(Spacing.CornerLarge),
         title = {
             Column(
@@ -75,14 +64,14 @@ fun ReviewDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Surface(
-                    color = UvgGoldLight,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = RoundedCornerShape(Spacing.CornerMedium)
                 ) {
                     Text(
                         text = "⭐ Reseña del Servicio",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = UvgGoldDark,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
@@ -93,14 +82,14 @@ fun ReviewDialog(
                     text = "Califica tu experiencia",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = UvgGreenDark,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
                     text = "Tu valoración ayuda a la comunidad universitaria a conocer el trabajo del emprendedor.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = UvgTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
@@ -112,9 +101,9 @@ fun ReviewDialog(
             ) {
                 // Servicio y Emprendedor evaluado
                 Surface(
-                    color = UvgBackground,
+                    color = MaterialTheme.colorScheme.background,
                     shape = RoundedCornerShape(Spacing.CornerMedium),
-                    border = BorderStroke(1.dp, UvgBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -122,12 +111,12 @@ fun ReviewDialog(
                             text = serviceTitle,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
-                            color = UvgTextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Emprendedor: $sellerName",
                             fontSize = 12.sp,
-                            color = UvgTextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -147,7 +136,7 @@ fun ReviewDialog(
                             Text(
                                 text = if (isSelected) "★" else "☆",
                                 fontSize = 34.sp,
-                                color = if (isSelected) UvgGoldPrimary else UvgBorder,
+                                color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
                                 modifier = Modifier
                                     .clickable { selectedStars = star }
                                     .padding(2.dp)
@@ -165,7 +154,7 @@ fun ReviewDialog(
                         },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = UvgGoldDark
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
 
@@ -180,15 +169,15 @@ fun ReviewDialog(
                         Text(
                             "Escribe un breve comentario sobre la puntualidad, calidad o trato recibido...",
                             fontSize = 12.sp,
-                            color = UvgTextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     shape = RoundedCornerShape(Spacing.CornerMedium),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = UvgGreenPrimary,
-                        unfocusedBorderColor = UvgBorder,
-                        focusedContainerColor = UvgBackground,
-                        unfocusedContainerColor = UvgBackground
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background
                     )
                 )
             }
@@ -199,7 +188,7 @@ fun ReviewDialog(
                     onSubmitReview(selectedStars, reviewComment)
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = UvgGreenPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(Spacing.CornerMedium),
@@ -211,10 +200,11 @@ fun ReviewDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismissRequest,
-                colors = ButtonDefaults.textButtonColors(contentColor = UvgTextSecondary)
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
             ) {
                 Text("Cerrar")
             }
         }
     )
 }
+

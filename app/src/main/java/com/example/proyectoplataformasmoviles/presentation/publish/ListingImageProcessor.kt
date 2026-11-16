@@ -44,6 +44,7 @@ fun prepareListingImage(
     } else {
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
+            inSampleSize = 1
         }
 
         contentResolver.openInputStream(uri).use { inputStream ->
@@ -153,6 +154,7 @@ fun decodeListingImage(encodedImage: String?): Bitmap? {
 
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
+            inSampleSize = 1
         }
 
         BitmapFactory.decodeByteArray(
