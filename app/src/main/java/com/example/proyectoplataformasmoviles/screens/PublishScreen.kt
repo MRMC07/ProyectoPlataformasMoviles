@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -38,7 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +72,7 @@ fun PublishScreen(
     modifier: Modifier = Modifier,
     imageContent: @Composable () -> Unit = {}
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     var isCategoryMenuExpanded by remember {
         mutableStateOf(false)
     }
@@ -102,6 +107,7 @@ fun PublishScreen(
                 .fillMaxSize()
                 .padding(contentPadding)
                 .verticalScroll(rememberScrollState())
+                .imePadding()
                 .padding(
                     horizontal = 20.dp,
                     vertical = 16.dp
@@ -270,7 +276,11 @@ fun PublishScreen(
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { keyboardController?.hide() }
                     ),
                     shape = RoundedCornerShape(12.dp),
                     isError = state.priceTouched &&
@@ -441,10 +451,9 @@ fun PublishScreen(
                     .height(52.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = UvgGreenPrimary,
-                    disabledContainerColor = UvgGreenPrimary.copy(
-                        alpha = 0.35f
-                    ),
-                    contentColor = Color.White
+                    disabledContainerColor = UvgGreenPrimary.copy(alpha = 0.55f),
+                    contentColor = Color.White,
+                    disabledContentColor = Color.White.copy(alpha = 0.9f)
                 ),
                 shape = RoundedCornerShape(14.dp)
             ) {

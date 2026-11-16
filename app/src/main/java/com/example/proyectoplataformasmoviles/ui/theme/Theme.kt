@@ -1,6 +1,5 @@
 package com.example.proyectoplataformasmoviles.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -52,7 +51,10 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun ProyectoPlataformasMovilesTheme(
-    darkTheme: Boolean = true,
+    // Las pantallas principales usan la paleta verde/blanca institucional.
+    // Mantenemos este tema claro como predeterminado para que los componentes
+    // Material (TextButton, campos y estados deshabilitados) coincidan con ella.
+    darkTheme: Boolean = false,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
