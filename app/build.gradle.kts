@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.proyectoplataformasmoviles"
+    namespace = "com.example.nexora"
     compileSdk {
         version = release(37)
     }

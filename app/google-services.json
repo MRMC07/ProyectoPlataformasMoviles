@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "467281574188",
+    "firebase_url": "https://proyectoplataformasmovil-86f6e-default-rtdb.firebaseio.com",
+    "project_id": "proyectoplataformasmovil-86f6e",
+    "storage_bucket": "proyectoplataformasmovil-86f6e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:467281574188:android:63ab8db8dfc415a51b5489",
+        "android_client_info": {
+          "package_name": "com.example.proyectoplataformasmoviles"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "467281574188-i52bcrupa378nd8fek7oq26n1hi3dg70.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLpN1RmFndmxNva4Jvwxbpu4xBGook0o4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "467281574188-i52bcrupa378nd8fek7oq26n1hi3dg70.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
