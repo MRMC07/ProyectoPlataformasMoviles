@@ -1,0 +1,45 @@
+Actuá como responsable del perfil, imágenes de publicaciones y reseñas de Nexora. Implementá directamente en el repositorio Android existente y conservá su diseño.
+
+Primero leé documentacion/ESTADO_Y_CONTINUIDAD.txt, instrucciones del repositorio, estado Git y código real. Conservá cambios ajenos. Trabajá en una rama como funcionalidad/perfil-resenas desde la misma base que tu compañero. No hagas push/merge automáticamente.
+
+CONTEXTO
+Mercado para estudiantes de todas las universidades de Guatemala. Kotlin, Compose, Material 3, verde/blanco. Firebase Authentication por correo y Realtime Database de proyectoplataformasmovil-86f6e. Publicaciones reales en products; borradores locales Room. No cambiar paquete, esquema Room ni servidor; no migrar a Firestore.
+Perfil básico y publicaciones propias ya existen. Universidad/carrera no persisten. ReviewDialog es prototipo y no hay reseñas reales. Una cuenta puede consultar/publicar; elegir una etiqueta no otorga privilegios.
+
+PRIMERA ENTREGA: PERFIL
+Implementar lectura/edición de nombre visible, universidad y carrera opcional persistentes. Incluir diferentes universidades y texto libre, sin restringir a UVG ni inventar afiliaciones.
+Propuesta inicial usuarios/{uid}, con datos públicos mínimos. Solo el dueño edita. No almacenar contraseñas/tokens, roles privilegiados editables ni publicar contactos adicionales innecesarios.
+Validar tipos/longitudes y manejar carga/error. Cuentas existentes sin perfil siguen funcionando, con “Sin especificar” o invitación a completarlo.
+Definir fuente de verdad para nombre entre Firebase Authentication y el perfil; manejar fallos parciales honestamente.
+No mostrar sello de estudiante verificado: no existe verificación institucional.
+
+SEGUNDA ENTREGA: UNA IMAGEN POR PUBLICACIÓN
+Implementar selección de una sola imagen desde el selector de fotos oficial de Android, vista previa y posibilidad de quitarla o reemplazarla antes de publicar. Sin cámara, múltiples imágenes ni permisos amplios de galería si no hacen falta.
+La base ya tiene Listing.imageUrl, el repositorio escribe imageUrl y el catálogo usa Coil. El formulario actual deja ese valor vacío: aprovechar lo existente, sin agregar otra biblioteca de visualización ni inventar fotos.
+Conservar publicaciones antiguas sin imagen y permitir publicar sin foto, salvo que el equipo acuerde volverla obligatoria.
+Revisar el almacenamiento remoto disponible antes de elegir implementación. Una URI local/content:// no funciona en otro dispositivo: subir el archivo a almacenamiento remoto y persistir la referencia utilizable en imageUrl. No guardar imágenes en Base64 dentro de Realtime Database.
+Si hace falta habilitar un servicio de almacenamiento o un plan con costo, preparar la propuesta concreta y consultar al equipo antes de activarlo. No cambiar el proyecto Firebase ni habilitar facturación automáticamente.
+Validar tipo real de imagen y un tamaño máximo explícito; reducir dimensiones/peso cuando corresponda. No confiar solo en extensión o MIME declarado por el cliente.
+Restringir subida/reemplazo/eliminación al propietario autenticado mediante reglas del almacenamiento, con política de lectura coherente con el catálogo. Una URL no debe permitir que otro usuario escriba sobre la imagen.
+Mostrar progreso, error y reintento; no confirmar publicación si una foto seleccionada no terminó de subirse y vincularse. Definir limpieza de archivos huérfanos al fallar la publicación o reemplazar imágenes, sin borrar archivos ajenos.
+Mostrar la misma imagen en tarjeta y detalle, con descripción accesible y estado alternativo cuando falte o no cargue.
+Probar selección/cancelación/reemplazo, archivo inválido o demasiado grande, fallo de subida y visualización desde otra cuenta/dispositivo. Verificar rechazo de escrituras ajenas. No modificar Room para guardar fotos de borradores sin acordar esa ampliación.
+Coordinar PublishScreen, PublishViewModel, Listing, repositorio, reglas y dependencias antes de integrar. Esta función puede avanzar mientras se estabiliza el contrato de solicitudes.
+
+TERCERA ENTREGA: RESEÑAS
+El compañero 1 hará solicitudes/chat. Leer y acordar su contrato antes de integrar. Propuesta compartida: solicitudes/{id} con publicacionId, compradorId, vendedorId, estado; pendiente/aceptada/completada/cancelada. El contrato definitivo y permisos deben quedar documentados.
+Solo una solicitud realmente completada habilita reseña: autor comprador, destinatario vendedor, puntuación entera 1..5 y comentario limitado. Bloquear autorreseñas y usuarios sin relación con el trato.
+Proponer ID determinista igual al ID de solicitud para impedir duplicados; confirmar rutas según las consultas necesarias. Sin edición/eliminación hasta definir política.
+Promedio/conteo desde reseñas válidas: el usuario no puede fijar su reputación ni escribir promedios arbitrarios. No exponer datos privados de solicitudes para mostrar reseñas públicas.
+Si no existe aún un contrato real de solicitud completada, entregar primero perfil; no activar reseñas con pedidos ficticios ni permisos abiertos para simular integración.
+
+COORDINACIÓN
+Mantener chat/transiciones bajo responsabilidad del compañero 1. Coordinar ProfileScreen, AppNavigation, AppContainer, modelos y reglas antes de integrar. No sobrescribirlos a ciegas.
+Componentes oficiales y repositorios/ViewModel sencillos, sin dependencias innecesarias. Identificadores/comentarios/textos nuevos en español, sin refactorización masiva de nombres heredados.
+Preservar reglas de products/solicitudes. En Realtime Database las reglas no filtran lecturas globales; diseñar rutas y consultas autorizadas expresamente.
+Pruebas de emulador: no editar perfil ajeno; no reseñar sin participar ni antes de completar; rechazar puntuación inválida/duplicados; aceptar perfil y reseña válidos.
+No desplegar reglas ni modificar Firebase real sin autorización explícita del equipo.
+
+ENTREGA
+Implementar archivos y ejecutar assembleDebug, testDebugUnitTest, lintDebug y pruebas pertinentes. Comprobar persistencia tras reabrir sesión y acceso desde otra cuenta/dispositivo con datos controlados. No modificar cuentas reales sin autorización.
+Actualizar documentación y entregar cambios, contrato compartido, evidencia y pendientes. No declarar funcionalidad por mostrar una pantalla o compilar. Preparar una solicitud de cambios revisable, sin push/merge automático.

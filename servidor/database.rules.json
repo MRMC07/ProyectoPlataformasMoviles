@@ -1,0 +1,168 @@
+{
+    "rules":  {
+                  ".read":  false,
+                  ".write":  false,
+                  "products":  {
+                                   ".read":  "auth != null",
+                                   "$identificador":  {
+                                                          ".write":  "auth != null \u0026\u0026 newData.exists() \u0026\u0026 (!data.exists() || data.child(\u0027propietario\u0027).val() === auth.uid) \u0026\u0026 newData.child(\u0027propietario\u0027).val() === auth.uid \u0026\u0026 newData.child(\u0027correoVendedor\u0027).val() === auth.token.email",
+                                                          ".validate":  "newData.hasChildren([\u0027id\u0027,\u0027nombre\u0027,\u0027descripcion\u0027,\u0027precio\u0027,\u0027precioCentavos\u0027,\u0027categoria\u0027,\u0027nombreVendedor\u0027,\u0027correoVendedor\u0027,\u0027propietario\u0027,\u0027creadaEn\u0027])",
+                                                          "id":  {
+                                                                     ".validate":  "newData.val() === $identificador"
+                                                                 },
+                                                          "nombre":  {
+                                                                         ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 3 \u0026\u0026 newData.val().length \u003c= 80"
+                                                                     },
+                                                          "descripcion":  {
+                                                                              ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 10 \u0026\u0026 newData.val().length \u003c= 1500"
+                                                                          },
+                                                          "precioCentavos":  {
+                                                                                 ".validate":  "newData.isNumber() \u0026\u0026 newData.val() \u003e 0 \u0026\u0026 newData.val() \u003c= 99999999 \u0026\u0026 newData.val() % 1 === 0"
+                                                                             },
+                                                          "precio":  {
+                                                                         ".validate":  "newData.isNumber() \u0026\u0026 newData.val() === newData.parent().child(\u0027precioCentavos\u0027).val() / 100"
+                                                                     },
+                                                          "categoria":  {
+                                                                            ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e 0 \u0026\u0026 newData.val().length \u003c= 80"
+                                                                        },
+                                                          "nombreVendedor":  {
+                                                                                 ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003c= 200"
+                                                                             },
+                                                          "correoVendedor":  {
+                                                                                 ".validate":  "newData.val() === auth.token.email"
+                                                                             },
+                                                          "propietario":  {
+                                                                              ".validate":  "newData.val() === auth.uid"
+                                                                          },
+                                                          "creadaEn":  {
+                                                                           ".validate":  "newData.isNumber() \u0026\u0026 (data.exists() ? newData.val() === data.val() : newData.val() === now)"
+                                                                       },
+                                                          "imageUrl":  {
+                                                                           ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003c= 2048"
+                                                                       },
+                                                          "isActive":  {
+                                                                           ".validate":  "newData.isBoolean()"
+                                                                       },
+                                                          "hasImage":  {
+                                                                           ".validate":  "newData.isBoolean()"
+                                                                       },
+                                                          "$otro":  {
+                                                                        ".validate":  false
+                                                                    }
+                                                      }
+                               },
+                  "listingImages":  {
+                                        "$listingId":  {
+                                                           ".read":  "auth != null",
+                                                           ".write":  "auth != null \u0026\u0026 newData.parent().parent().child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).val() === auth.uid",
+                                                           ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e 0 \u0026\u0026 newData.val().length \u003c= 100000"
+                                                       }
+                                    },
+                  "perfiles":  {
+                                   "$userId":  {
+                                                   ".read":  "auth != null \u0026\u0026 auth.uid === $userId \u0026\u0026 auth.token.email != null",
+                                                   ".write":  "auth != null \u0026\u0026 auth.uid === $userId \u0026\u0026 auth.token.email != null \u0026\u0026 newData.exists()",
+                                                   ".validate":  "newData.hasChildren([\u0027nombre\u0027,\u0027universidad\u0027,\u0027descripcion\u0027,\u0027fotoBase64\u0027,\u0027actualizadoEn\u0027])",
+                                                   "nombre":  {
+                                                                  ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 3 \u0026\u0026 newData.val().length \u003c= 80"
+                                                              },
+                                                   "universidad":  {
+                                                                       ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003c= 120"
+                                                                   },
+                                                   "descripcion":  {
+                                                                       ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003c= 300"
+                                                                   },
+                                                   "fotoBase64":  {
+                                                                      ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003c= 32768"
+                                                                  },
+                                                   "actualizadoEn":  {
+                                                                         ".validate":  "newData.isNumber() \u0026\u0026 newData.val() === now"
+                                                                     },
+                                                   "$other":  {
+                                                                  ".validate":  false
+                                                              }
+                                               }
+                               },
+                  "reviews":  {
+                                  ".read":  "auth != null",
+                                  "$listingId":  {
+                                                     "$userId":  {
+                                                                     ".write":  "auth != null \u0026\u0026 auth.uid === $userId \u0026\u0026 auth.token.email != null \u0026\u0026 auth.token.firebase.sign_in_provider !== \u0027anonymous\u0027 \u0026\u0026 newData.exists() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).exists() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).isString() \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).val() !== auth.uid \u0026\u0026 root.child(\u0027products\u0027).child($listingId).child(\u0027isActive\u0027).val() !== false \u0026\u0026 newData.child(\u0027requestId\u0027).isString() \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027customerId\u0027).val() === auth.uid \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027listingId\u0027).val() === $listingId \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027providerId\u0027).val() === root.child(\u0027products\u0027).child($listingId).child(\u0027propietario\u0027).val() \u0026\u0026 root.child(\u0027requests\u0027).child(newData.child(\u0027requestId\u0027).val()).child(\u0027status\u0027).val() === \u0027COMPLETED\u0027",
+                                                                     ".validate":  "newData.hasChildren([\u0027authorName\u0027,\u0027rating\u0027,\u0027comment\u0027,\u0027createdAt\u0027,\u0027updatedAt\u0027,\u0027requestId\u0027])",
+                                                                     "authorName":  {
+                                                                                        ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 80"
+                                                                                    },
+                                                                     "rating":  {
+                                                                                    ".validate":  "newData.isNumber() \u0026\u0026 newData.val() \u003e= 1 \u0026\u0026 newData.val() \u003c= 5 \u0026\u0026 newData.val() % 1 === 0"
+                                                                                },
+                                                                     "comment":  {
+                                                                                     ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 500"
+                                                                                 },
+                                                                     "createdAt":  {
+                                                                                       ".validate":  "newData.isNumber() \u0026\u0026 (data.exists() ? newData.val() === data.val() : newData.val() === now)"
+                                                                                   },
+                                                                     "updatedAt":  {
+                                                                                       ".validate":  "newData.isNumber() \u0026\u0026 newData.val() === now"
+                                                                                   },
+                                                                     "$other":  {
+                                                                                    ".validate":  false
+                                                                                },
+                                                                     "requestId":  {
+                                                                                       ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 128"
+                                                                                   }
+                                                                 }
+                                                 }
+                              },
+                  "requests":  {
+                                   ".read":  "auth != null \u0026\u0026 auth.token.email != null \u0026\u0026 query.equalTo === auth.uid \u0026\u0026 (query.orderByChild === \u0027customerId\u0027 || query.orderByChild === \u0027providerId\u0027)",
+                                   ".indexOn":  [
+                                                    "customerId",
+                                                    "providerId"
+                                                ],
+                                   "$requestId":  {
+                                                      ".read":  "auth != null \u0026\u0026 (auth.uid === data.child(\u0027customerId\u0027).val() || auth.uid === data.child(\u0027providerId\u0027).val())",
+                                                      ".write":  "auth != null \u0026\u0026 auth.token.email != null \u0026\u0026 newData.exists() \u0026\u0026 ((!data.exists() \u0026\u0026 newData.child(\u0027customerId\u0027).val() === auth.uid \u0026\u0026 newData.child(\u0027status\u0027).val() === \u0027PENDING\u0027 \u0026\u0026 root.child(\u0027products\u0027).child(newData.child(\u0027listingId\u0027).val()).exists() \u0026\u0026 root.child(\u0027products\u0027).child(newData.child(\u0027listingId\u0027).val()).child(\u0027isActive\u0027).val() !== false \u0026\u0026 root.child(\u0027products\u0027).child(newData.child(\u0027listingId\u0027).val()).child(\u0027propietario\u0027).isString() \u0026\u0026 root.child(\u0027products\u0027).child(newData.child(\u0027listingId\u0027).val()).child(\u0027propietario\u0027).val() !== auth.uid \u0026\u0026 newData.child(\u0027providerId\u0027).val() === root.child(\u0027products\u0027).child(newData.child(\u0027listingId\u0027).val()).child(\u0027propietario\u0027).val() \u0026\u0026 newData.child(\u0027listingTitle\u0027).val() === root.child(\u0027products\u0027).child(newData.child(\u0027listingId\u0027).val()).child(\u0027nombre\u0027).val() \u0026\u0026 newData.child(\u0027providerName\u0027).val() === root.child(\u0027products\u0027).child(newData.child(\u0027listingId\u0027).val()).child(\u0027nombreVendedor\u0027).val()) || (data.exists() \u0026\u0026 ((auth.uid === data.child(\u0027customerId\u0027).val() \u0026\u0026 (data.child(\u0027status\u0027).val() === \u0027PENDING\u0027 || data.child(\u0027status\u0027).val() === \u0027ACCEPTED\u0027) \u0026\u0026 newData.child(\u0027status\u0027).val() === \u0027CANCELLED\u0027) || (auth.uid === data.child(\u0027providerId\u0027).val() \u0026\u0026 ((data.child(\u0027status\u0027).val() === \u0027PENDING\u0027 \u0026\u0026 (newData.child(\u0027status\u0027).val() === \u0027ACCEPTED\u0027 || newData.child(\u0027status\u0027).val() === \u0027REJECTED\u0027)) || (data.child(\u0027status\u0027).val() === \u0027ACCEPTED\u0027 \u0026\u0026 newData.child(\u0027status\u0027).val() === \u0027COMPLETED\u0027))))))",
+                                                      ".validate":  "newData.hasChildren([\u0027listingId\u0027,\u0027listingTitle\u0027,\u0027customerId\u0027,\u0027customerName\u0027,\u0027providerId\u0027,\u0027providerName\u0027,\u0027modality\u0027,\u0027schedule\u0027,\u0027note\u0027,\u0027status\u0027,\u0027createdAt\u0027,\u0027updatedAt\u0027])",
+                                                      "listingId":  {
+                                                                        ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 768 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                    },
+                                                      "listingTitle":  {
+                                                                           ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 3 \u0026\u0026 newData.val().length \u003c= 80 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                       },
+                                                      "customerId":  {
+                                                                         ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 128 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                     },
+                                                      "customerName":  {
+                                                                           ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 80 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                       },
+                                                      "providerId":  {
+                                                                         ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 128 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                     },
+                                                      "providerName":  {
+                                                                           ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003c= 200 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                       },
+                                                      "modality":  {
+                                                                       ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 1 \u0026\u0026 newData.val().length \u003c= 80 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                   },
+                                                      "schedule":  {
+                                                                       ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 3 \u0026\u0026 newData.val().length \u003c= 120 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                                   },
+                                                      "note":  {
+                                                                   ".validate":  "newData.isString() \u0026\u0026 newData.val().length \u003e= 10 \u0026\u0026 newData.val().length \u003c= 1000 \u0026\u0026 (!data.exists() || newData.val() === data.val())"
+                                                               },
+                                                      "status":  {
+                                                                     ".validate":  "newData.isString() \u0026\u0026 (newData.val() === \u0027PENDING\u0027 || newData.val() === \u0027ACCEPTED\u0027 || newData.val() === \u0027REJECTED\u0027 || newData.val() === \u0027CANCELLED\u0027 || newData.val() === \u0027COMPLETED\u0027)"
+                                                                 },
+                                                      "createdAt":  {
+                                                                        ".validate":  "newData.isNumber() \u0026\u0026 (data.exists() ? newData.val() === data.val() : newData.val() === now)"
+                                                                    },
+                                                      "updatedAt":  {
+                                                                        ".validate":  "newData.isNumber() \u0026\u0026 newData.val() === now"
+                                                                    },
+                                                      "$other":  {
+                                                                     ".validate":  false
+                                                                 }
+                                                  }
+                               }
+              }
+}

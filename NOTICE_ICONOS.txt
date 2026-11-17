@@ -1,0 +1,3 @@
+Material Symbols Rounded, Google. Apache License 2.0.
+Fuentes: https://fonts.google.com/icons y https://github.com/google/material-design-icons/blob/master/LICENSE
+Vectores convertidos de SVG a VectorDrawable sin cambiar sus trazados.

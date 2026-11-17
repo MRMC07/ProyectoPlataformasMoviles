@@ -1,0 +1,25 @@
+Prepará una presentación académica de Nexora para tres integrantes usando CONTEXTO_NOTEBOOKLM.txt y únicamente las fuentes cargadas por el equipo. Objetivo: 10 diapositivas, aproximadamente 8 minutos; adaptar a la consigna real sin inventar contenido.
+
+Audiencia: docente y estudiantes de desarrollo móvil. Español claro, sin spanglish innecesario. Estilo limpio verde/blanco consistente con Nexora, máximo tres ideas breves por diapositiva. Priorizar capturas reales actuales y diagramas sencillos. No inventar pantallas para aparentar funciones disponibles.
+
+ESTRUCTURA
+1. Nexora: propósito y espacios para nombres reales del equipo.
+2. Problema planteado y estudiantes de distintas universidades. Sin estadísticas inventadas.
+3. Propuesta de valor y alcance actual.
+4. Recorrido cuenta → catálogo → detalle → consulta → correo.
+5. Publicación propia y diferencia con borrador local.
+6. Arquitectura: Compose/Navigation → ViewModel/repositorios → Firebase Auth/Realtime Database; Room para borradores.
+7. Diseño Nexora y comunidad de varias universidades.
+8. Validación y límites: compilación, 11 unitarias, lint, seis instrumentadas previas y 24 comprobaciones locales de reglas, con su alcance exacto.
+9. Pendientes y reparto de continuación: solicitudes/chat; perfil, una imagen por publicación y reseñas. Rotular como pendientes.
+10. Demostración, aprendizajes y cierre.
+
+EXACTITUD
+Usamos Realtime Database, no Firestore. Chat interno y reseñas conectadas pendientes. La consulta actual prepara correo, sin confirmar envío ni compra. No hay pagos ni verificación universitaria. La inspiración UVG no restringe el público ni implica aval.
+La selección y subida de una imagen por publicación es trabajo pendiente: imageUrl y la visualización del catálogo ya existen, pero no el recorrido completo de carga de fotos.
+No inventar métricas, nombres, contribuciones, capturas ni resultados. Las ofertas ficticias son datos de prueba. Si falta respaldo, omitir o marcar “por confirmar”. Los textos actuales tienen prioridad frente a capturas viejas de UVG/chat/verificación.
+
+GUION ADICIONAL
+Si ejecutás este pedido en el chat y no en el generador de diapositivas, entregar por diapositiva: título, texto breve, visual sugerida, explicación oral de 35–50 segundos y fuente de respaldo.
+Repartir equilibradamente entre Integrante 1, 2 y 3; el equipo completará nombres.
+Agregar seis preguntas probables del docente y respuestas honestas: elección de Realtime Database, aporte de Room, permisos de publicaciones, pendientes del chat, ausencia de pagos y validación del código asistido por IA.
