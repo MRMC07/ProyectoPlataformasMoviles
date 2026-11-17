@@ -20,11 +20,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.nexora.domain.repository.ListingRepository
 import com.example.nexora.presentation.detail.DetailViewModel
 import com.example.nexora.presentation.publish.PublishViewModel
-import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun EditListingRoute(
     listingId: String,
+    userId: String?,
     repository: ListingRepository,
     onBackClick: () -> Unit
 ) {
@@ -44,14 +44,15 @@ fun EditListingRoute(
         .collectAsStateWithLifecycle()
 
     val listing = detailState.listing
-    val user = FirebaseAuth.getInstance().currentUser
 
-    val canEdit = user != null &&
-            !user.isAnonymous &&
+    val canEdit = !userId.isNullOrBlank() &&
             listing != null &&
-            listing.ownerId == user.uid
+            listing.ownerId == userId
 
     val statusMessage = when {
+        userId.isNullOrBlank() ->
+            "Iniciá sesión para editar tus publicaciones."
+
         detailState.isLoading ->
             "Cargando publicación..."
 
@@ -75,7 +76,10 @@ fun EditListingRoute(
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (detailState.isLoading) {
+                if (
+                    detailState.isLoading &&
+                    !userId.isNullOrBlank()
+                ) {
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -83,7 +87,10 @@ fun EditListingRoute(
 
                 Text(text = statusMessage)
 
-                if (detailState.errorMessage != null) {
+                if (
+                    detailState.errorMessage != null &&
+                    !userId.isNullOrBlank()
+                ) {
                     TextButton(
                         onClick = detailViewModel::onRetryClick
                     ) {
@@ -101,10 +108,10 @@ fun EditListingRoute(
     }
 
     val editableListing = requireNotNull(listing)
-    val currentUser = requireNotNull(user)
+    val currentUserId = requireNotNull(userId)
 
     val editViewModel: PublishViewModel = viewModel(
-        key = "edit:${currentUser.uid}:$listingId",
+        key = "edit:$currentUserId:$listingId",
         factory = viewModelFactory {
             initializer {
                 PublishViewModel(

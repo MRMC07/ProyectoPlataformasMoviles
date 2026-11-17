@@ -1,5 +1,6 @@
 package com.example.nexora.data.repository
 
+import com.example.nexora.data.monitoring.CrashlyticsErrorReporter
 import com.example.nexora.domain.model.Listing
 import com.example.nexora.domain.model.RequestStatus
 import com.example.nexora.domain.model.ServiceRequest
@@ -12,16 +13,20 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 
 class RequestRepository(
     firestore: FirebaseFirestore,
-    private val authentication: FirebaseAuth
+    private val authentication: FirebaseAuth,
+    private val errorReporter: CrashlyticsErrorReporter
 ) {
     private val requests = firestore.collection("requests")
     private val listings = firestore.collection("listings")
@@ -38,6 +43,13 @@ class RequestRepository(
             (sentRequests + receivedRequests)
                 .distinctBy { it.id }
                 .sortedByDescending { it.updatedAt }
+        }.catch { error ->
+            errorReporter.record(
+                error = error,
+                operation = "requests.observe"
+            )
+
+            throw error
         }
     }
 
@@ -49,76 +61,78 @@ class RequestRepository(
         schedule: String,
         note: String
     ) {
-        val user = requireUser(userId)
+        runRequestOperation("requests.create") {
+            val user = requireUser(userId)
 
-        require(requestId.isNotBlank() && '/' !in requestId) {
-            "El identificador de la solicitud no es válido."
+            require(requestId.isNotBlank() && '/' !in requestId) {
+                "El identificador de la solicitud no es válido."
+            }
+
+            require(modality.trim().length in 1..80) {
+                "Seleccioná una modalidad."
+            }
+
+            require(schedule.trim().length in 3..120) {
+                "Indicá un horario de entre 3 y 120 caracteres."
+            }
+
+            require(note.trim().length in 10..1000) {
+                "Escribí un mensaje de entre 10 y 1000 caracteres."
+            }
+
+            val listingSnapshot = listings.document(listing.id)
+                .get(Source.SERVER)
+                .await()
+
+            check(listingSnapshot.exists()) {
+                "La publicación no está disponible."
+            }
+
+            check(listingSnapshot.getBoolean("isActive") != false) {
+                "La publicación está pausada. Pedile a quien la publicó que la active."
+            }
+
+            val providerId = listingSnapshot.getString("ownerId")
+                ?: listing.ownerId.takeIf { it.isNotBlank() }
+                ?: error("La publicación no tiene un vendedor válido.")
+
+            require(providerId != userId) {
+                "No podés solicitar tu propio servicio."
+            }
+
+            val listingTitle = listingSnapshot.getString("title")
+                ?: listing.title.takeIf { it.isNotBlank() }
+                ?: error("La publicación no tiene un título válido.")
+
+            val providerName = listingSnapshot.getString("sellerName")
+                ?: listing.sellerName.takeIf { it.isNotBlank() }
+                ?: error("La publicación no tiene un vendedor válido.")
+
+            val customerName = user.displayName
+                .orEmpty()
+                .trim()
+                .take(80)
+                .ifBlank { "Usuario" }
+
+            val requestFields = mapOf(
+                "listingId" to listing.id,
+                "listingTitle" to listingTitle,
+                "customerId" to userId,
+                "customerName" to customerName,
+                "providerId" to providerId,
+                "providerName" to providerName,
+                "modality" to modality.trim(),
+                "schedule" to schedule.trim(),
+                "note" to note.trim(),
+                "status" to RequestStatus.PENDING.name,
+                "createdAt" to FieldValue.serverTimestamp(),
+                "updatedAt" to FieldValue.serverTimestamp()
+            )
+
+            confirmWrite(
+                requests.document(requestId).set(requestFields)
+            )
         }
-
-        require(modality.trim().length in 1..80) {
-            "Seleccioná una modalidad."
-        }
-
-        require(schedule.trim().length in 3..120) {
-            "Indicá un horario de entre 3 y 120 caracteres."
-        }
-
-        require(note.trim().length in 10..1000) {
-            "Escribí un mensaje de entre 10 y 1000 caracteres."
-        }
-
-        val listingSnapshot = listings.document(listing.id)
-            .get(Source.SERVER)
-            .await()
-
-        check(listingSnapshot.exists()) {
-            "La publicación no está disponible."
-        }
-
-        check(listingSnapshot.getBoolean("isActive") != false) {
-            "La publicación está pausada. Pedile a quien la publicó que la active."
-        }
-
-        val providerId = listingSnapshot.getString("ownerId")
-            ?: listing.ownerId.takeIf { it.isNotBlank() }
-            ?: error("La publicación no tiene un vendedor válido.")
-
-        require(providerId != userId) {
-            "No podés solicitar tu propio servicio."
-        }
-
-        val listingTitle = listingSnapshot.getString("title")
-            ?: listing.title.takeIf { it.isNotBlank() }
-            ?: error("La publicación no tiene un título válido.")
-
-        val providerName = listingSnapshot.getString("sellerName")
-            ?: listing.sellerName.takeIf { it.isNotBlank() }
-            ?: error("La publicación no tiene un vendedor válido.")
-
-        val customerName = user.displayName
-            .orEmpty()
-            .trim()
-            .take(80)
-            .ifBlank { "Usuario" }
-
-        val requestFields = mapOf(
-            "listingId" to listing.id,
-            "listingTitle" to listingTitle,
-            "customerId" to userId,
-            "customerName" to customerName,
-            "providerId" to providerId,
-            "providerName" to providerName,
-            "modality" to modality.trim(),
-            "schedule" to schedule.trim(),
-            "note" to note.trim(),
-            "status" to RequestStatus.PENDING.name,
-            "createdAt" to FieldValue.serverTimestamp(),
-            "updatedAt" to FieldValue.serverTimestamp()
-        )
-
-        confirmWrite(
-            requests.document(requestId).set(requestFields)
-        )
     }
 
     suspend fun changeStatus(
@@ -126,30 +140,34 @@ class RequestRepository(
         userId: String,
         status: RequestStatus
     ) {
-        requireUser(userId)
+        runRequestOperation("requests.changeStatus") {
+            requireUser(userId)
 
-        val requestDocument = requests.document(request.id)
-        val snapshot = requestDocument.get().await()
+            val requestDocument = requests.document(request.id)
+            val snapshot = requestDocument.get().await()
 
-        check(snapshot.exists()) {
-            "La solicitud ya no está disponible."
-        }
+            check(snapshot.exists()) {
+                "La solicitud ya no está disponible."
+            }
 
-        val currentRequest = parseRequest(snapshot)
-            ?: error("La solicitud guardada no tiene un formato válido.")
+            val currentRequest = parseRequest(snapshot)
+                ?: error(
+                    "La solicitud guardada no tiene un formato válido."
+                )
 
-        require(status in currentRequest.availableStatuses(userId)) {
-            "Este cambio de estado no está permitido."
-        }
+            require(status in currentRequest.availableStatuses(userId)) {
+                "Este cambio de estado no está permitido."
+            }
 
-        confirmWrite(
-            requestDocument.update(
-                mapOf(
-                    "status" to status.name,
-                    "updatedAt" to FieldValue.serverTimestamp()
+            confirmWrite(
+                requestDocument.update(
+                    mapOf(
+                        "status" to status.name,
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
                 )
             )
-        )
+        }
     }
 
     private fun requireUser(userId: String): FirebaseUser {
@@ -171,11 +189,15 @@ class RequestRepository(
                 return@addSnapshotListener
             }
 
-            trySend(
-                snapshot?.documents
+            try {
+                val availableRequests = snapshot?.documents
                     .orEmpty()
                     .mapNotNull(::parseRequest)
-            )
+
+                trySend(availableRequests)
+            } catch (parsingError: Exception) {
+                close(parsingError)
+            }
         }
 
         awaitClose {
@@ -186,8 +208,9 @@ class RequestRepository(
     private fun parseRequest(
         snapshot: DocumentSnapshot
     ): ServiceRequest? {
-        fun text(field: String): String? =
-            snapshot.get(field) as? String
+        fun text(field: String): String? {
+            return snapshot.get(field) as? String
+        }
 
         fun timestampMillis(field: String): Long? {
             return when (val value = snapshot.get(field)) {
@@ -226,6 +249,31 @@ class RequestRepository(
 
         check(confirmed) {
             "No pudimos confirmar el guardado. Puede completarse al recuperar la conexión."
+        }
+    }
+
+    private suspend fun <T> runRequestOperation(
+        operationName: String,
+        operation: suspend () -> T
+    ): T {
+        return try {
+            operation()
+        } catch (timeout: TimeoutCancellationException) {
+            errorReporter.record(
+                error = timeout,
+                operation = operationName
+            )
+
+            throw timeout
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            errorReporter.record(
+                error = error,
+                operation = operationName
+            )
+
+            throw error
         }
     }
 }

@@ -6,7 +6,6 @@ import com.example.nexora.data.repository.RequestRepository
 import com.example.nexora.domain.model.Listing
 import com.example.nexora.domain.model.RequestStatus
 import com.example.nexora.domain.model.ServiceRequest
-import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +53,8 @@ class RequestsViewModel(
                     _uiState.update {
                         it.copy(
                             requests = requests,
-                            isLoading = false
+                            isLoading = false,
+                            errorMessage = null
                         )
                     }
                 }
@@ -64,7 +64,8 @@ class RequestsViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "No se pudieron cargar las solicitudes. Revisá tu conexión."
+                        errorMessage =
+                            "No se pudieron cargar las solicitudes. Revisá tu conexión y volvé a intentar."
                     )
                 }
             }
@@ -93,7 +94,10 @@ class RequestsViewModel(
                 )
 
                 _uiState.update {
-                    it.copy(updatingId = null)
+                    it.copy(
+                        updatingId = null,
+                        actionError = null
+                    )
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -101,7 +105,8 @@ class RequestsViewModel(
                 _uiState.update {
                     it.copy(
                         updatingId = null,
-                        actionError = "No pudimos confirmar el cambio. Revisá la conexión y el estado actual. Si quedó pendiente, podría completarse al recuperar la conexión."
+                        actionError =
+                            "No pudimos confirmar el cambio. Revisá la conexión y el estado actual. Si quedó pendiente, podría completarse al recuperar la conexión."
                     )
                 }
             }
@@ -205,30 +210,18 @@ class NewRequestViewModel(
                 _uiState.update {
                     it.copy(
                         isSending = false,
-                        isSent = true
+                        isSent = true,
+                        errorMessage = null
                     )
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (error: Exception) {
+            } catch (_: Exception) {
                 _uiState.update {
                     it.copy(
                         isSending = false,
-                        errorMessage = when (error) {
-                            is FirebaseFirestoreException -> when (error.code) {
-                                FirebaseFirestoreException.Code.PERMISSION_DENIED ->
-                                    "Firebase rechazó la solicitud. Revisá las reglas de Firestore para la colección requests."
-
-                                FirebaseFirestoreException.Code.UNAVAILABLE ->
-                                    "Firestore no está disponible. Revisá la conexión e intentá de nuevo."
-
-                                else -> error.localizedMessage
-                                    ?: "Firestore no pudo guardar la solicitud."
-                            }
-
-                            else -> error.localizedMessage
-                                ?: "No se pudo guardar la solicitud. Revisá Mis solicitudes antes de reintentar."
-                        }
+                        errorMessage =
+                            "No pudimos confirmar el envío. Revisá tu conexión y Mis solicitudes antes de reintentar. Si quedó pendiente, podría completarse al recuperar la conexión."
                     )
                 }
             }

@@ -1,11 +1,15 @@
 package com.example.nexora.navigation
 
 import android.net.Uri
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,13 +21,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.nexora.data.repository.AuthRepository
 import com.example.nexora.data.repository.ChatRepository
 import com.example.nexora.data.repository.ProfileRepository
 import com.example.nexora.data.repository.RequestRepository
 import com.example.nexora.data.repository.ReviewRepository
+import com.example.nexora.domain.model.AuthenticationException
 import com.example.nexora.domain.repository.ListingRepository
 import com.example.nexora.local.DraftRepository
 import com.example.nexora.presentation.MyProductsViewModel
+import com.example.nexora.presentation.account.AccountViewModel
 import com.example.nexora.presentation.chat.ChatViewModel
 import com.example.nexora.presentation.detail.DetailViewModel
 import com.example.nexora.presentation.home.HomeViewModel
@@ -45,8 +52,7 @@ import com.example.nexora.screens.ProfileRoute
 import com.example.nexora.screens.PublishScreen
 import com.example.nexora.screens.RegisterScreen
 import com.example.nexora.screens.RequestsRoute
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 import com.example.nexora.presentation.PublishViewModel as DraftPublishViewModel
 import com.example.nexora.screens.drafts.PublishScreen as DraftPublishScreen
 
@@ -101,26 +107,27 @@ fun AppNavigation(
     draftRepository: DraftRepository,
     profileRepository: ProfileRepository,
     chatRepository: ChatRepository,
-    requestRepository: RequestRepository
+    requestRepository: RequestRepository,
+    authRepository: AuthRepository,
+    reviewRepository: ReviewRepository
 ) {
     val navController = rememberNavController()
-    val authentication = FirebaseAuth.getInstance()
+    val coroutineScope = rememberCoroutineScope()
 
-    val isAuthenticated = authentication.currentUser?.let { user ->
-        !user.isAnonymous && user.email != null
-    } == true
-
-    val startDestination = if (isAuthenticated) {
-        Routes.HOME
-    } else {
-        Routes.REGISTER
+    val accountFlow = remember(authRepository) {
+        authRepository.observeUser()
     }
 
-    val reviewRepository = remember(authentication) {
-        ReviewRepository(
-            firestore = FirebaseFirestore.getInstance(),
-            authentication = authentication
-        )
+    val currentAccount by accountFlow.collectAsStateWithLifecycle(
+        initialValue = authRepository.currentUser
+    )
+
+    val startDestination = remember {
+        if (authRepository.currentUser != null) {
+            Routes.HOME
+        } else {
+            Routes.REGISTER
+        }
     }
 
     val catalogState by homeViewModel.uiState
@@ -132,7 +139,9 @@ fun AppNavigation(
 
     var currentUserName by rememberSaveable {
         mutableStateOf(
-            authentication.currentUser?.displayName ?: "Visitante"
+            authRepository.currentUser?.let { user ->
+                user.name.ifBlank { user.email }
+            } ?: "Visitante"
         )
     }
 
@@ -140,23 +149,84 @@ fun AppNavigation(
         mutableStateOf("Estudiante")
     }
 
+    var isSigningOut by remember {
+        mutableStateOf(false)
+    }
+
+    var signOutError by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    signOutError?.let { message ->
+        AlertDialog(
+            onDismissRequest = {
+                signOutError = null
+            },
+            title = {
+                Text("No pudimos cerrar la sesión")
+            },
+            text = {
+                Text(message)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        signOutError = null
+                    }
+                ) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
         composable(Routes.REGISTER) {
-            RegisterScreen(
-                onRegisterSuccess = { name, role ->
+            val accountViewModel: AccountViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        AccountViewModel(
+                            authRepository = authRepository
+                        )
+                    }
+                }
+            )
+
+            val accountState by accountViewModel.uiState
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(accountState.authenticatedUser) {
+                val user = accountState.authenticatedUser
+
+                if (user != null) {
+                    currentUserName = user.name.ifBlank {
+                        user.email
+                    }
+                    currentUserRole = "Estudiante"
+
+                    accountViewModel.clearAuthenticatedUser()
                     homeViewModel.onRetryClick()
-                    currentUserName = name
-                    currentUserRole = role
 
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.REGISTER) {
                             inclusive = true
                         }
+                        launchSingleTop = true
                     }
-                },
+                }
+            }
+
+            RegisterScreen(
+                state = accountState,
+                onNameChange = accountViewModel::updateName,
+                onEmailChange = accountViewModel::updateEmail,
+                onPasswordChange = accountViewModel::updatePassword,
+                onCreatingAccountChange =
+                    accountViewModel::setCreatingAccount,
+                onSubmitClick = accountViewModel::authenticate,
                 onBackClick = {
                     navController.popBackStack()
                 },
@@ -165,14 +235,10 @@ fun AppNavigation(
         }
 
         composable(Routes.HOME) {
-            val user = authentication.currentUser
+            val user = currentAccount
 
-            if (
-                user == null ||
-                user.isAnonymous ||
-                user.email == null
-            ) {
-                LaunchedEffect(user?.uid) {
+            if (user == null) {
+                LaunchedEffect(Unit) {
                     navController.navigate(Routes.REGISTER) {
                         popUpTo(Routes.HOME) {
                             inclusive = true
@@ -237,11 +303,10 @@ fun AppNavigation(
             val detailState by detailViewModel.uiState
                 .collectAsStateWithLifecycle()
 
-            val currentUser = authentication.currentUser
+            val user = currentAccount
 
-            val isOwner = currentUser != null &&
-                    !currentUser.isAnonymous &&
-                    detailState.listing?.ownerId == currentUser.uid
+            val isOwner = user != null &&
+                    detailState.listing?.ownerId == user.id
 
             DetailScreen(
                 state = detailState,
@@ -267,7 +332,8 @@ fun AppNavigation(
                             canManage = isOwner,
                             isUpdating = detailState.isUpdatingStatus,
                             errorMessage = detailState.statusErrorMessage,
-                            onChangeStatus = detailViewModel::setListingActive
+                            onChangeStatus =
+                                detailViewModel::setListingActive
                         )
                     }
                 },
@@ -282,6 +348,7 @@ fun AppNavigation(
                     detailState.listing?.let { listing ->
                         ListingReviews(
                             listing = listing,
+                            userId = currentAccount?.id,
                             repository = reviewRepository
                         )
                     }
@@ -303,6 +370,7 @@ fun AppNavigation(
 
             EditListingRoute(
                 listingId = listingId,
+                userId = currentAccount?.id,
                 repository = listingRepository,
                 onBackClick = {
                     navController.popBackStack()
@@ -312,6 +380,7 @@ fun AppNavigation(
 
         composable(Routes.REQUESTS) {
             RequestsRoute(
+                userId = currentAccount?.id,
                 repository = requestRepository,
                 onBackClick = {
                     navController.popBackStack()
@@ -339,23 +408,23 @@ fun AppNavigation(
                 ?.getString("requestId")
                 .orEmpty()
 
-            val user = authentication.currentUser?.takeUnless {
-                it.isAnonymous || it.email == null
-            }
+            val user = currentAccount
 
             if (user == null) {
                 LaunchedEffect(requestId) {
                     navController.popBackStack()
-                    navController.navigate(Routes.REGISTER)
+                    navController.navigate(Routes.REGISTER) {
+                        launchSingleTop = true
+                    }
                 }
             } else {
                 val chatViewModel: ChatViewModel = viewModel(
-                    key = "chat:${user.uid}:$requestId",
+                    key = "chat:${user.id}:$requestId",
                     factory = viewModelFactory {
                         initializer {
                             ChatViewModel(
                                 repository = chatRepository,
-                                userId = user.uid,
+                                userId = user.id,
                                 requestId = requestId
                             )
                         }
@@ -364,7 +433,7 @@ fun AppNavigation(
 
                 ChatScreen(
                     viewModel = chatViewModel,
-                    userId = user.uid,
+                    userId = user.id,
                     onBack = {
                         navController.popBackStack()
                     }
@@ -388,6 +457,7 @@ fun AppNavigation(
                 listing = activeListings.firstOrNull {
                     it.id == listingId
                 },
+                userId = currentAccount?.id,
                 repository = requestRepository,
                 onBackClick = {
                     navController.popBackStack()
@@ -561,9 +631,9 @@ fun AppNavigation(
         }
 
         composable(Routes.PROFILE) {
-            val user = authentication.currentUser
+            val user = currentAccount
 
-            if (user == null || user.isAnonymous) {
+            if (user == null) {
                 GuestProfileScreen(
                     onSignInClick = {
                         navController.navigate(Routes.REGISTER)
@@ -577,13 +647,13 @@ fun AppNavigation(
                 )
             } else {
                 val profileViewModel: ProfileViewModel = viewModel(
-                    key = user.uid,
+                    key = user.id,
                     factory = viewModelFactory {
                         initializer {
                             ProfileViewModel(
                                 repository = profileRepository,
-                                userId = user.uid,
-                                initialName = user.displayName.orEmpty()
+                                userId = user.id,
+                                initialName = user.name
                             )
                         }
                     }
@@ -592,7 +662,7 @@ fun AppNavigation(
                 ProfileRoute(
                     viewModel = profileViewModel,
                     listings = catalogState.listings.filter {
-                        it.ownerId == user.uid
+                        it.ownerId == user.id
                     },
                     onBackClick = {
                         navController.popBackStack()
@@ -606,15 +676,32 @@ fun AppNavigation(
                         navController.navigate(Routes.PUBLISH)
                     },
                     onLogoutClick = {
-                        authentication.signOut()
-                        homeViewModel.onRetryClick()
+                        if (!isSigningOut) {
+                            isSigningOut = true
 
-                        currentUserName = "Visitante"
-                        currentUserRole = "Estudiante"
+                            coroutineScope.launch {
+                                try {
+                                    authRepository.signOut()
 
-                        navController.navigate(Routes.REGISTER) {
-                            popUpTo(0) {
-                                inclusive = true
+                                    currentUserName = "Visitante"
+                                    currentUserRole = "Estudiante"
+
+                                    homeViewModel.onRetryClick()
+
+                                    navController.navigate(
+                                        Routes.REGISTER
+                                    ) {
+                                        popUpTo(0) {
+                                            inclusive = true
+                                        }
+                                        launchSingleTop = true
+                                    }
+                                } catch (_: AuthenticationException) {
+                                    signOutError =
+                                        "Volvé a intentar cerrar la sesión."
+                                } finally {
+                                    isSigningOut = false
+                                }
                             }
                         }
                     },

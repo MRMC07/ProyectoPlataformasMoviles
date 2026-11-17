@@ -1,139 +1,226 @@
 package com.example.nexora.presentation.account
 
 import android.util.Patterns
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.google.firebase.FirebaseNetworkException
-import com.google.firebase.FirebaseTooManyRequestsException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.UserProfileChangeRequest
+import androidx.lifecycle.viewModelScope
+import com.example.nexora.data.repository.AuthRepository
+import com.example.nexora.domain.model.AccountUser
+import com.example.nexora.domain.model.AuthenticationException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class AccountViewModel : ViewModel() {
+private val institutionalDomains = setOf(
+    "uvg.edu.gt",
+    "correoe.usac.edu.gt",
+    "mail.usac.edu.gt",
+    "miumg.edu.gt",
+    "galileo.edu",
+    "estudiante.udv.edu.gt",
+    "upana.edu.gt",
+    "unis.edu.gt",
+    "ufm.edu"
+)
 
-    private var isActive = true
-    private val authentication = FirebaseAuth.getInstance()
-
-    var isLoading by mutableStateOf(false)
-        private set
-
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
-
-    fun authenticate(
-        email: String,
-        password: String,
-        name: String,
-        createAccount: Boolean,
-        onAuthenticated: (String) -> Unit
-    ) {
-        if (isLoading) return
-
-        val trimmedEmail = email.trim()
-
-        if (
-            !Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches() ||
-            password.isBlank()
-        ) {
-            errorMessage = "Ingresá tu correo electrónico y contraseña."
-            return
+data class AccountUiState(
+    val name: String = "",
+    val email: String = "",
+    val password: String = "",
+    val isCreatingAccount: Boolean = true,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val authenticatedUser: AccountUser? = null
+) {
+    val nameError: String?
+        get() = when {
+            !isCreatingAccount -> null
+            name.trim().length < 3 ->
+                "Ingresá un nombre de al menos 3 caracteres."
+            name.trim().length > 80 ->
+                "El nombre debe tener como máximo 80 caracteres."
+            else -> null
         }
 
-        if (createAccount) {
-            val institutionalDomains = setOf(
-                "uvg.edu.gt",
-                "correoe.usac.edu.gt",
-                "mail.usac.edu.gt",
-                "miumg.edu.gt",
-                "galileo.edu",
-                "estudiante.udv.edu.gt",
-                "upana.edu.gt",
-                "unis.edu.gt",
-                "ufm.edu"
-            )
+    val emailError: String?
+        get() {
+            val trimmedEmail = email.trim()
 
-            val emailDomain = trimmedEmail
+            if (!Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+                return "Ingresá un correo electrónico válido."
+            }
+
+            val domain = trimmedEmail
                 .substringAfterLast("@", "")
                 .lowercase()
 
-            if (emailDomain !in institutionalDomains) {
-                errorMessage = "Usá tu correo institucional de estudiante."
-                return
-            }
-        }
-
-        isLoading = true
-        errorMessage = null
-
-        val authenticationTask = if (createAccount) {
-            authentication.createUserWithEmailAndPassword(
-                trimmedEmail,
-                password
-            )
-        } else {
-            authentication.signInWithEmailAndPassword(
-                trimmedEmail,
-                password
-            )
-        }
-
-        authenticationTask.addOnCompleteListener { authenticationResult ->
-            if (!isActive) return@addOnCompleteListener
-
-            val user = if (authenticationResult.isSuccessful) {
-                authenticationResult.result?.user
+            return if (isCreatingAccount && domain !in institutionalDomains) {
+                "Usá tu correo institucional de estudiante."
             } else {
                 null
             }
+        }
 
-            if (!authenticationResult.isSuccessful || user == null) {
-                isLoading = false
+    val passwordError: String?
+        get() = when {
+            password.isBlank() ->
+                "Ingresá tu contraseña."
+            isCreatingAccount && password.length < 6 ->
+                "Usá al menos 6 caracteres."
+            else -> null
+        }
 
-                val cause = authenticationResult.exception
-                val errorCode = when (cause) {
-                    is FirebaseNetworkException ->
-                        "ERROR_NETWORK_REQUEST_FAILED"
+    val isFormValid: Boolean
+        get() = nameError == null &&
+                emailError == null &&
+                passwordError == null
+}
 
-                    is FirebaseTooManyRequestsException ->
-                        "ERROR_TOO_MANY_REQUESTS"
+class AccountViewModel(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
-                    else -> accountErrorCode(
-                        (cause as? FirebaseAuthException)?.errorCode,
-                        cause?.message
+    private val _uiState = MutableStateFlow(AccountUiState())
+    val uiState = _uiState.asStateFlow()
+
+    fun updateName(name: String) {
+        if (_uiState.value.isLoading) return
+
+        _uiState.update {
+            it.copy(
+                name = name.take(80),
+                errorMessage = null
+            )
+        }
+    }
+
+    fun updateEmail(email: String) {
+        if (_uiState.value.isLoading) return
+
+        _uiState.update {
+            it.copy(
+                email = email,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun updatePassword(password: String) {
+        if (_uiState.value.isLoading) return
+
+        _uiState.update {
+            it.copy(
+                password = password,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun setCreatingAccount(isCreatingAccount: Boolean) {
+        if (_uiState.value.isLoading) return
+
+        _uiState.update {
+            it.copy(
+                isCreatingAccount = isCreatingAccount,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun authenticate() {
+        val form = _uiState.value
+
+        if (form.isLoading || form.authenticatedUser != null) return
+
+        if (!form.isFormValid) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = form.nameError
+                        ?: form.emailError
+                        ?: form.passwordError
+                )
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                errorMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            var accountCreated = false
+
+            try {
+                val user = if (form.isCreatingAccount) {
+                    val createdUser = authRepository.createAccount(
+                        email = form.email.trim(),
+                        password = form.password
+                    )
+
+                    accountCreated = true
+
+                    authRepository.updateDisplayName(
+                        userId = createdUser.id,
+                        name = form.name.trim()
+                    )
+                } else {
+                    authRepository.signIn(
+                        email = form.email.trim(),
+                        password = form.password
                     )
                 }
 
-                errorMessage = accountErrorMessage(errorCode)
-            } else if (createAccount) {
-                val trimmedName = name.trim()
-                val profileUpdates = UserProfileChangeRequest.Builder()
-                    .setDisplayName(trimmedName)
-                    .build()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        password = "",
+                        authenticatedUser = user
+                    )
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: AuthenticationException) {
+                val message = when {
+                    accountCreated ->
+                        "La cuenta fue creada, pero no pudimos guardar el nombre. Ingresá con tu correo y contraseña."
 
-                user.updateProfile(profileUpdates)
-                    .addOnCompleteListener onProfileUpdated@{ profileResult ->
-                        if (!isActive) return@onProfileUpdated
+                    error.errorCode == "ERROR_AUTH_TIMEOUT" ->
+                        "La operación tardó demasiado. Revisá tu conexión y volvé a intentar."
 
-                        isLoading = false
+                    error.errorCode == "ERROR_SESSION_CHANGED" ->
+                        "La sesión cambió. Volvé a ingresar."
 
-                        if (profileResult.isSuccessful) {
-                            onAuthenticated(user.displayName ?: trimmedName)
+                    else ->
+                        accountErrorMessage(
+                            accountErrorCode(
+                                firebaseCode = error.errorCode,
+                                detail = error.detail
+                            )
+                        )
+                }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isCreatingAccount = if (accountCreated) {
+                            false
                         } else {
-                            errorMessage =
-                                "La cuenta fue creada, pero no se pudo guardar el nombre. Podés iniciar sesión con tu correo."
-                        }
-                    }
-            } else {
-                isLoading = false
-                onAuthenticated(user.displayName ?: user.email.orEmpty())
+                            it.isCreatingAccount
+                        },
+                        errorMessage = message
+                    )
+                }
             }
         }
     }
 
-    override fun onCleared() {
-        isActive = false
-        super.onCleared()
+    fun clearAuthenticatedUser() {
+        _uiState.update {
+            it.copy(authenticatedUser = null)
+        }
     }
 }

@@ -22,7 +22,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,47 +40,18 @@ import com.example.nexora.domain.model.RequestStatus
 import com.example.nexora.domain.model.ServiceRequest
 import com.example.nexora.presentation.request.NewRequestViewModel
 import com.example.nexora.presentation.request.RequestsViewModel
-import com.google.firebase.auth.FirebaseAuth
 import java.util.UUID
-
-@Composable
-private fun currentRequestUserId(): String? {
-    val authentication = remember {
-        FirebaseAuth.getInstance()
-    }
-
-    var user by remember {
-        mutableStateOf(authentication.currentUser)
-    }
-
-    DisposableEffect(authentication) {
-        val listener = FirebaseAuth.AuthStateListener {
-            user = it.currentUser
-        }
-
-        authentication.addAuthStateListener(listener)
-
-        onDispose {
-            authentication.removeAuthStateListener(listener)
-        }
-    }
-
-    return user?.takeUnless {
-        it.isAnonymous || it.email == null
-    }?.uid
-}
 
 @Composable
 fun NewRequestRoute(
     listing: Listing?,
+    userId: String?,
     repository: RequestRepository,
     onBackClick: () -> Unit,
     onSent: () -> Unit,
     onRequestsClick: () -> Unit,
     onSignInClick: () -> Unit
 ) {
-    val userId = currentRequestUserId()
-
     if (
         userId == null ||
         listing == null ||
@@ -255,13 +225,12 @@ fun NewRequestRoute(
 
 @Composable
 fun RequestsRoute(
+    userId: String?,
     repository: RequestRepository,
     onBackClick: () -> Unit,
     onSignInClick: () -> Unit,
     onChatClick: (ServiceRequest) -> Unit = {}
 ) {
-    val userId = currentRequestUserId()
-
     if (userId == null) {
         RequestMessage(
             message = "Iniciá sesión con tu cuenta para ver tus solicitudes.",
@@ -285,7 +254,7 @@ fun RequestsRoute(
 
     val state by requestsViewModel.uiState.collectAsStateWithLifecycle()
 
-    var showReceived by rememberSaveable {
+    var showReceived by rememberSaveable(userId) {
         mutableStateOf(false)
     }
 
@@ -405,9 +374,7 @@ fun RequestsRoute(
                             style = MaterialTheme.typography.titleMedium
                         )
 
-                        Text(
-                            "Estado: ${request.status.label}"
-                        )
+                        Text("Estado: ${request.status.label}")
 
                         Text(
                             if (showReceived) {
@@ -473,8 +440,8 @@ fun RequestsRoute(
                     onClick = {
                         pendingChange = null
                         requestsViewModel.changeStatus(
-                            request,
-                            status
+                            request = request,
+                            status = status
                         )
                     }
                 ) {

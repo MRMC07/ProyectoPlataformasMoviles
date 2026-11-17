@@ -7,29 +7,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.room.Room
 import com.example.nexora.di.AppContainer
-import com.example.nexora.local.AppDatabase
-import com.example.nexora.local.DraftRepository
 import com.example.nexora.navigation.AppNavigation
 import com.example.nexora.presentation.home.HomeViewModel
 import com.example.nexora.ui.theme.NexoraTheme
 
 class MainActivity : ComponentActivity() {
-
-    private val database by lazy {
-        Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java,
-            "project_local_database"
-        ).build()
-    }
-
-    private val draftRepository by lazy {
-        DraftRepository(
-            draftDao = database.draftDao()
-        )
-    }
 
     private val appContainer by lazy {
         AppContainer(applicationContext)
@@ -42,7 +25,9 @@ class MainActivity : ComponentActivity() {
 
         val homeViewModelFactory = viewModelFactory {
             initializer {
-                HomeViewModel(appContainer.listingRepository)
+                HomeViewModel(
+                    appContainer.listingRepository
+                )
             }
         }
 
@@ -56,10 +41,12 @@ class MainActivity : ComponentActivity() {
                 AppNavigation(
                     homeViewModel = homeViewModel,
                     listingRepository = appContainer.listingRepository,
-                    draftRepository = draftRepository,
+                    draftRepository = appContainer.draftRepository,
                     profileRepository = appContainer.profileRepository,
                     requestRepository = appContainer.requestRepository,
-                    chatRepository = appContainer.chatRepository
+                    chatRepository = appContainer.chatRepository,
+                    authRepository = appContainer.authRepository,
+                    reviewRepository = appContainer.reviewRepository
                 )
             }
         }

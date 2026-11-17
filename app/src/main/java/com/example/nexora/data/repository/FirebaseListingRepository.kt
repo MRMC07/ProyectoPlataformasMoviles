@@ -1,5 +1,6 @@
 package com.example.nexora.data.repository
 
+import com.example.nexora.data.monitoring.CrashlyticsErrorReporter
 import com.example.nexora.domain.model.Listing
 import com.example.nexora.domain.model.MAX_LISTING_IMAGE_LENGTH
 import com.example.nexora.domain.repository.ListingRepository
@@ -8,9 +9,12 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
@@ -18,16 +22,13 @@ import java.math.RoundingMode
 
 class FirebaseListingRepository(
     firestore: FirebaseFirestore,
-    private val authentication: FirebaseAuth
+    private val authentication: FirebaseAuth,
+    private val reviewRepository: ReviewRepository,
+    private val errorReporter: CrashlyticsErrorReporter
 ) : ListingRepository {
 
     private val listings = firestore.collection("listings")
     private val listingImages = firestore.collection("listingImages")
-
-    private val reviewRepository = ReviewRepository(
-        firestore = firestore,
-        authentication = authentication
-    )
 
     override fun observeListings(): Flow<List<Listing>> {
         return combine(
@@ -45,65 +46,91 @@ class FirebaseListingRepository(
         }
     }
 
-    private fun observeListingData(): Flow<List<Listing>> = callbackFlow {
-        val registration = listings.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-                return@addSnapshotListener
-            }
-
-            val availableListings = snapshot
-                ?.documents
-                .orEmpty()
-                .mapNotNull { document ->
-                    document.data?.let { fields ->
-                        parseListing(document.id, fields)
-                    }
-                }
-
-            trySend(availableListings)
-        }
-
-        awaitClose {
-            registration.remove()
-        }
-    }
-
-    override fun observeListingImage(
-        listingId: String
-    ): Flow<String?> = callbackFlow {
-        val registration = listingImages.document(listingId)
-            .addSnapshotListener { snapshot, error ->
+    private fun observeListingData(): Flow<List<Listing>> {
+        return callbackFlow<List<Listing>> {
+            val registration = listings.addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
                     return@addSnapshotListener
                 }
 
-                val imageData = snapshot?.get("imageBase64")
+                try {
+                    val availableListings = snapshot
+                        ?.documents
+                        .orEmpty()
+                        .mapNotNull { document ->
+                            document.data?.let { fields ->
+                                parseListing(document.id, fields)
+                            }
+                        }
 
-                when {
-                    snapshot == null || !snapshot.exists() -> {
-                        trySend(null)
-                    }
-
-                    imageData is String &&
-                            imageData.isNotBlank() &&
-                            imageData.length <= MAX_LISTING_IMAGE_LENGTH -> {
-                        trySend(imageData)
-                    }
-
-                    else -> {
-                        close(
-                            IllegalStateException(
-                                "La imagen guardada no tiene un formato válido."
-                            )
-                        )
-                    }
+                    trySend(availableListings)
+                } catch (parsingError: Exception) {
+                    close(parsingError)
                 }
             }
 
-        awaitClose {
-            registration.remove()
+            awaitClose {
+                registration.remove()
+            }
+        }.catch { error ->
+            errorReporter.record(
+                error = error,
+                operation = "listings.observe"
+            )
+
+            throw error
+        }
+    }
+
+    override fun observeListingImage(
+        listingId: String
+    ): Flow<String?> {
+        return callbackFlow<String?> {
+            val registration = listingImages.document(listingId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
+                        return@addSnapshotListener
+                    }
+
+                    try {
+                        val imageData = snapshot?.get("imageBase64")
+
+                        when {
+                            snapshot == null || !snapshot.exists() -> {
+                                trySend(null)
+                            }
+
+                            imageData is String &&
+                                    imageData.isNotBlank() &&
+                                    imageData.length <= MAX_LISTING_IMAGE_LENGTH -> {
+                                trySend(imageData)
+                            }
+
+                            else -> {
+                                close(
+                                    IllegalStateException(
+                                        "La imagen guardada no tiene un formato válido."
+                                    )
+                                )
+                            }
+                        }
+                    } catch (parsingError: Exception) {
+                        close(parsingError)
+                    }
+                }
+
+            awaitClose {
+                registration.remove()
+            }
+        }.catch { error ->
+            errorReporter.record(
+                error = error,
+                operation = "listings.observeImage"
+            )
+
+            throw error
         }
     }
 
@@ -111,61 +138,78 @@ class FirebaseListingRepository(
         listing: Listing,
         imageBase64: String?
     ) {
-        val user = requireRegisteredUser()
-        val priceInCents = validateListing(listing)
-        validateImage(imageBase64)
+        runListingOperation("listings.save") {
+            val user = requireRegisteredUser()
+            val priceInCents = validateListing(listing)
+            validateImage(imageBase64)
 
-        val existingListing = readListingData(listing.id)
+            val existingListing = readListingData(listing.id)
 
-        if (existingListing.exists()) {
-            updateListing(
-                listing = listing,
-                imageBase64 = imageBase64,
-                removeImage = false
-            )
-            return
-        }
-
-        check(authentication.currentUser?.uid == user.uid) {
-            "La sesión cambió. Volvé a ingresar."
-        }
-
-        val sellerName = user.displayName
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?: "Estudiante"
-
-        val listingFields = mapOf(
-            "title" to listing.title.trim(),
-            "description" to listing.description.trim(),
-            "price" to priceInCents / 100.0,
-            "priceCents" to priceInCents,
-            "category" to listing.category.trim(),
-            "sellerName" to sellerName,
-            "imageUrl" to listing.imageUrl,
-            "ownerId" to user.uid,
-            "createdAt" to FieldValue.serverTimestamp(),
-            "isActive" to true,
-            "hasImage" to (imageBase64 != null)
-        )
-
-        val batch = listings.firestore.batch()
-        batch.set(listings.document(listing.id), listingFields)
-
-        if (imageBase64 != null) {
-            batch.set(
-                listingImages.document(listing.id),
-                mapOf(
-                    "ownerId" to user.uid,
-                    "imageBase64" to imageBase64
+            if (existingListing.exists()) {
+                updateListingData(
+                    listing = listing,
+                    imageBase64 = imageBase64,
+                    removeImage = false
                 )
-            )
-        }
 
-        confirmWrite(batch.commit())
+                return@runListingOperation
+            }
+
+            check(authentication.currentUser?.uid == user.uid) {
+                "La sesión cambió. Volvé a ingresar."
+            }
+
+            val sellerName = user.displayName
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: "Estudiante"
+
+            val listingFields = mapOf(
+                "title" to listing.title.trim(),
+                "description" to listing.description.trim(),
+                "price" to priceInCents / 100.0,
+                "priceCents" to priceInCents,
+                "category" to listing.category.trim(),
+                "sellerName" to sellerName,
+                "imageUrl" to listing.imageUrl,
+                "ownerId" to user.uid,
+                "createdAt" to FieldValue.serverTimestamp(),
+                "isActive" to true,
+                "hasImage" to (imageBase64 != null)
+            )
+
+            val batch = listings.firestore.batch()
+            batch.set(listings.document(listing.id), listingFields)
+
+            if (imageBase64 != null) {
+                batch.set(
+                    listingImages.document(listing.id),
+                    mapOf(
+                        "ownerId" to user.uid,
+                        "imageBase64" to imageBase64
+                    )
+                )
+            }
+
+            confirmWrite(batch.commit())
+        }
     }
 
     override suspend fun updateListing(
+        listing: Listing,
+        imageBase64: String?,
+        removeImage: Boolean
+    ) {
+        runListingOperation("listings.update") {
+            updateListingData(
+                listing = listing,
+                imageBase64 = imageBase64,
+                removeImage = removeImage
+            )
+        }
+    }
+
+    private suspend fun updateListingData(
         listing: Listing,
         imageBase64: String?,
         removeImage: Boolean
@@ -184,9 +228,7 @@ class FirebaseListingRepository(
             "La publicación ya no está disponible."
         }
 
-        val ownerId = existingListing.getString("ownerId")
-
-        check(ownerId == user.uid) {
+        check(existingListing.getString("ownerId") == user.uid) {
             "Solo podés editar tus propias publicaciones."
         }
 
@@ -232,32 +274,34 @@ class FirebaseListingRepository(
         listingId: String,
         isActive: Boolean
     ) {
-        val user = requireRegisteredUser()
+        runListingOperation("listings.setActive") {
+            val user = requireRegisteredUser()
 
-        require(listingId.isNotBlank() && '/' !in listingId) {
-            "El identificador de la publicación no es válido."
-        }
+            require(listingId.isNotBlank() && '/' !in listingId) {
+                "El identificador de la publicación no es válido."
+            }
 
-        val existingListing = readListingData(listingId)
+            val existingListing = readListingData(listingId)
 
-        check(existingListing.exists()) {
-            "La publicación ya no está disponible."
-        }
+            check(existingListing.exists()) {
+                "La publicación ya no está disponible."
+            }
 
-        check(existingListing.getString("ownerId") == user.uid) {
-            "Solo podés administrar tus propias publicaciones."
-        }
+            check(existingListing.getString("ownerId") == user.uid) {
+                "Solo podés administrar tus propias publicaciones."
+            }
 
-        check(authentication.currentUser?.uid == user.uid) {
-            "La sesión cambió. Volvé a ingresar."
-        }
+            check(authentication.currentUser?.uid == user.uid) {
+                "La sesión cambió. Volvé a ingresar."
+            }
 
-        confirmWrite(
-            listings.document(listingId).update(
-                "isActive",
-                isActive
+            confirmWrite(
+                listings.document(listingId).update(
+                    "isActive",
+                    isActive
+                )
             )
-        )
+        }
     }
 
     private fun requireRegisteredUser(): FirebaseUser {
@@ -298,9 +342,10 @@ class FirebaseListingRepository(
                 .setScale(2, RoundingMode.UNNECESSARY)
                 .movePointRight(2)
                 .longValueExact()
-        } catch (_: ArithmeticException) {
+        } catch (error: ArithmeticException) {
             throw IllegalArgumentException(
-                "El precio debe tener un máximo de dos decimales."
+                "El precio debe tener un máximo de dos decimales.",
+                error
             )
         }
     }
@@ -334,6 +379,31 @@ class FirebaseListingRepository(
 
         check(confirmed) {
             "No pudimos confirmar el guardado. Puede completarse al recuperar la conexión."
+        }
+    }
+
+    private suspend fun <T> runListingOperation(
+        operationName: String,
+        operation: suspend () -> T
+    ): T {
+        return try {
+            operation()
+        } catch (timeout: TimeoutCancellationException) {
+            errorReporter.record(
+                error = timeout,
+                operation = operationName
+            )
+
+            throw timeout
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            errorReporter.record(
+                error = error,
+                operation = operationName
+            )
+
+            throw error
         }
     }
 }

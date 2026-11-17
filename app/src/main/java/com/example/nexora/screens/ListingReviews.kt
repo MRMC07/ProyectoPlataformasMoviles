@@ -16,11 +16,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -35,7 +32,6 @@ import com.example.nexora.data.repository.ReviewRepository
 import com.example.nexora.domain.model.Listing
 import com.example.nexora.domain.model.summarizeReviews
 import com.example.nexora.presentation.review.ReviewsViewModel
-import com.google.firebase.auth.FirebaseAuth
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -43,34 +39,12 @@ import java.util.Locale
 @Composable
 fun ListingReviews(
     listing: Listing,
-    repository: ReviewRepository
+    userId: String?,
+    repository: ReviewRepository,
+    modifier: Modifier = Modifier
 ) {
-    val authentication = remember {
-        FirebaseAuth.getInstance()
-    }
-
-    var currentUser by remember {
-        mutableStateOf(authentication.currentUser)
-    }
-
-    DisposableEffect(authentication) {
-        val listener = FirebaseAuth.AuthStateListener {
-            currentUser = it.currentUser
-        }
-
-        authentication.addAuthStateListener(listener)
-
-        onDispose {
-            authentication.removeAuthStateListener(listener)
-        }
-    }
-
-    val userId = currentUser
-        ?.takeUnless { it.isAnonymous }
-        ?.uid
-
     val reviewsViewModel: ReviewsViewModel = viewModel(
-        key = "reviews:${listing.id}:${currentUser?.uid}:$userId",
+        key = "reviews:${listing.id}:$userId",
         factory = viewModelFactory {
             initializer {
                 ReviewsViewModel(
@@ -84,7 +58,6 @@ fun ListingReviews(
 
     val state by reviewsViewModel.uiState.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
-
     val summary = summarizeReviews(state.reviews)
 
     val ownReview = state.reviews.firstOrNull {
@@ -99,7 +72,7 @@ fun ListingReviews(
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         HorizontalDivider()
@@ -208,7 +181,8 @@ fun ListingReviews(
 
                         OutlinedTextField(
                             value = state.comment,
-                            onValueChange = reviewsViewModel::onCommentChange,
+                            onValueChange =
+                                reviewsViewModel::onCommentChange,
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !state.isSaving,
                             label = {
