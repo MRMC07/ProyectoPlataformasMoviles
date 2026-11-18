@@ -1,0 +1,83 @@
+NEXORA — ESTADO Y CONTINUIDAD DEL EQUIPO
+Corte: 12 de noviembre de 2026. Comprobar el código actual antes de modificarlo.
+
+PROYECTO CORRECTO
+Raíz en la laptop de Sebastián: C:\Users\jlope\AndroidStudioProjects\ProyectoPlataformasMoviles
+Repositorio: https://github.com/MRMC07/ProyectoPlataformasMoviles
+Al preparar la entrega: rama respaldo-entrega4, base af516c8; cambios Nexora sin commit/push.
+No usar MyApplication ni sobrescribir con la antigua entrega de Descargas. Las rutas en otras laptops cambian.
+Nombre visible Nexora; paquete/applicationId com.example.proyectoplataformasmoviles.
+
+PROPÓSITO Y DECISIONES
+Mercado de productos y servicios de estudiantes de todas las universidades de Guatemala. La UVG inspira verde/blanco; no es requisito ni aval institucional.
+Una cuenta puede consultar y publicar. Las etiquetas de rol no otorgan privilegios.
+Kotlin, Compose y Material 3; controles oficiales, soluciones sencillas, dependencias justificadas.
+Identificadores nuevos, comentarios y textos propios en español, conservando nombres de APIs y código heredado cuando no haga falta renombrarlo.
+Paquetes por responsabilidad y estilos centralizados: adaptación de la intención de BEMIT, no CSS en Kotlin.
+Conservar el diseño aprobado; no rehacer el proyecto ni reemplazarlo por una plantilla.
+
+IMPLEMENTADO
+- Bienvenida Nexora, registro/ingreso/cierre de sesión por correo y contraseña con Firebase Authentication y errores específicos.
+- Catálogo con búsqueda/categorías, detalle y creación de publicaciones reales en Realtime Database, nodo products. No es Firestore.
+- Validación de título, descripción y precio en quetzales/centavos.
+- Preparación de consulta con modalidad, horario y nota; revisión y apertura de correo con esos datos en el cuerpo.
+- Abrir correo no confirma envío, compra ni trato. El usuario envía desde su aplicación de correo.
+- Perfil básico, publicaciones propias por UID y borradores locales Room.
+- Estados de carga/error/vacío sin sustituir datos remotos con anuncios ficticios.
+- Textos para todas las universidades, sin sello de verificación institucional ficticio.
+
+EVIDENCIA Y LÍMITES
+Última comprobación de código: assembleDebug correcto; testDebugUnitTest: 11 pruebas, 0 fallos; lintDebug completado, sin fallos bloqueantes pero con advertencias; assembleDebugAndroidTest correcto.
+Se ejecutaron previamente 6 pruebas instrumentadas en Pixel 7/API 37. No se repitieron tras los últimos cambios de correo/textos.
+Reglas servidor/database.rules.json: 24 comprobaciones aprobadas en emulador oficial Realtime Database 4.11.2. Esto no prueba despliegue de las reglas en producción.
+El usuario confirmó registro/ingreso y mostró una publicación real con detalle/precio/consulta.
+Pendiente probar una segunda cuenta/dispositivo, bloqueo de terceros y apertura completa del correo en una aplicación instalada. El agente no envió correos.
+Las pantallas de chat/reseñas existentes son prototipos; no constituyen integración de servidor.
+
+SERVIDOR Y DATOS
+Firebase proyectoplataformasmovil-86f6e.
+URL https://proyectoplataformasmovil-86f6e-default-rtdb.firebaseio.com/
+app/google-services.json excluido de Git; compartir con el equipo por separado. Correo/contraseña habilitado por el usuario.
+products/{id} escribe: id, nombre, descripcion, precio, precioCentavos, categoria, nombreVendedor, correoVendedor, propietario, imageUrl, creadaEn.
+propietario es UID de Authentication; creadaEn usa ServerValue.TIMESTAMP. La lectura admite algunos campos heredados en inglés; mantener compatibilidad.
+Reglas propuestas: lectura autenticada de products; creación/actualización propia con validaciones; otras ramas cerradas y eliminación no permitida. No abrir permisos globales.
+No se exportaron las reglas efectivas de la consola. Revisarlas antes de cualquier despliegue; no reemplazarlas a ciegas.
+El correo del vendedor forma parte del anuncio visible a cuentas autenticadas; revisar esta decisión al incorporar chat.
+Room guarda borradores en ese dispositivo: no se sincronizan ni equivalen a publicaciones remotas.
+
+ARCHIVOS IMPORTANTES (desde app/src/main/java/com/example/proyectoplataformasmoviles)
+MainActivity.kt: inicio, Room y dependencias.
+navigation/AppNavigation.kt: recorrido activo y parámetros.
+di/AppContainer.kt: conexión al repositorio.
+data/repository/RepositorioPublicaciones.kt y LecturaPublicacion.kt: publicaciones.
+presentation/cuenta/: autenticación y errores; presentation/home/, detail/, publish/: estados.
+screens/ContactoConectado.kt: contacto activo por correo.
+screens/ContactScreen.kt y ReviewDialog.kt: prototipos, no backend funcional.
+screens/ProfileScreen.kt: perfil básico sin perfil académico persistente.
+ui/theme/: estilos; hay nombres heredados Uvg/Spacing, no renombrar masivamente.
+local/: Room; conservar esquema y nombre project_local_database.
+domain/model/Listing.kt: ejemplos defaultUvgListings. No publicarlos ni usarlos para rellenar un catálogo remoto vacío.
+
+REPARTO PROPUESTO
+Compañero 1: solicitudes persistentes, chat entre participantes y estados del trato.
+Compañero 2: perfil persistente, una imagen por publicación y reseñas relacionadas con solicitudes completadas.
+El compañero 2 puede avanzar perfil e imágenes mientras acuerdan solicitudes; no habilitar reseñas basadas en pedidos inventados.
+Imágenes: imageUrl ya existe y el catálogo puede mostrarlo con Coil, pero el formulario actual lo deja vacío. Selección, subida, vista previa y visualización en detalle todavía no están implementadas como recorrido completo. Reutilizar lo existente y verificar acceso desde otro dispositivo; una URI local no es suficiente.
+Cada uno trabaja en su rama desde la misma base. Coordinar AppNavigation.kt, AppContainer.kt, modelos compartidos y database.rules.json mediante solicitudes de cambios.
+Los contratos de datos de los prompts son propuestas, no nodos existentes. Documentar el contrato final antes de integrar.
+
+OTROS PENDIENTES
+Recuperación de contraseña/verificación académica si se incluyen en alcance; no existen como recorridos completos.
+Recuperar operaciones pendientes tras cierre de proceso. El formulario reutiliza ID al reintentar, pero no resuelve todos los reinicios.
+Pruebas de accesibilidad, texto ampliado, tamaños y dos dispositivos. Revisar advertencias sin refactorización masiva.
+Definir si se necesitan edición/eliminación de publicaciones: no hay recorridos completos de interfaz para ambas.
+
+ENTORNO
+Gradle 9.6.0; AGP 9.5.1; Kotlin 2.2.10; KSP 2.3.6; compileSdk/targetSdk 37; minSdk 26.
+Verificado con JDK 21 para ejecutar Gradle. El nivel Java del módulo sigue en 11: son cosas distintas.
+Dependencias existentes: Compose/Material 3, Navigation, Lifecycle/ViewModel, Room, Firebase Auth/Database, coroutines y Coil.
+Cada laptop configura su SDK/local.properties y requiere internet para la primera sincronización.
+Comando base PowerShell desde la raíz:
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assembleDebugAndroidTest
+La automatización de esta laptop usó user.home explícito y Kotlin en proceso por particularidades del entorno; no copiar sus rutas a otra laptop.
+No declarar funcionamiento solo por compilar: registrar pruebas reales y limitaciones.
